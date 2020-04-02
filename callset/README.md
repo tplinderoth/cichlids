@@ -1,7 +1,15 @@
 Cichlid genetic variants
 ========================
 
-## malawi cichlids v1 summary
+## malawi cichlid v1 callset
+
+VCF location:<br/>
+~/rds/rds-rd109-durbin-group/projects/cichlid/cichlid_g.vcf/main_set_2019-07-10/fAstCal1.2/GenotypeCorrected/depth_filter/malawi_variants/vcf
+
+biallelic VCF location:<br/>
+~/rds/rds-rd109-durbin-group/projects/cichlid/cichlid_g.vcf/main_set_2019-07-10/fAstCal1.2/GenotypeCorrected/depth_filter/malawi_variants/biallelic 
+
+### malawi cichlids v1 summary
 
 * VCF_sites: Number of sites (lines discounting the header) in VCF
 * variants: Number of SNPs + indels
@@ -10,7 +18,7 @@ Cichlid genetic variants
 * deletions: Number of deletions
 * SNP_sites: Number of lines in VCF containing SNPs
 * biallelic_SNP_sites: Number of lines in VCF containing biallelic SNPs
-* ancestral_annotations: Number of lines with an inferred ancestral allele<\br>
+* ancestral_annotations: Number of lines with an inferred ancestral allele
 
 | contig  | VCF_sites | variants  | SNPs      | insertions | deletions | SNP_sites | biallelic_SNP_sites | ancestral_annotations |
 |:--------|:----------|:----------|:----------|:-----------|:----------|:----------|:--------------------|:----------------------|
