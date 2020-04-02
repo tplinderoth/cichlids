@@ -293,9 +293,23 @@ my $snpvcf_lines = 0;
 while (my $line = <$vcffh2>) {
 	my @tok = split(/\s+/, $line);
 	
-	# check if site passes MAF threshold
-	my $maf = $1 if ($tok[7] =~ /MAF=([^\s;=]+)/);
-	next unless $maf > $minmaf;
+	# allele frequency check that site is variable
+	next if ($tok[4] eq '.');
+
+	if ($tok[7] =~ /AF=([^\s;=]+)/) {
+		my $af = $1;
+		next unless ($af > 0 && $af < 1);
+
+		# check to make sure MAF annotation is present and filter on it		
+		if ($tok[7] =~ /MAF=([^\s;=]+)/) {
+			my $maf = $1;
+			next unless $maf > $minmaf;
+		} else {
+			print STDERR "WARNING: No INFO/MAF at $tok[0] $tok[1]: $tok[7]\n";
+		}
+	} else {
+		die("ERROR: No INFO/AF at $tok[0] $tok[1]: $tok[7]\n");
+	}
 	
 	# add DP FILTER ANNOTATIONS
 	if ($dpbounds) {
