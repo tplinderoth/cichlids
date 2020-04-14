@@ -1,10 +1,11 @@
 Cichlid genetic variants
 ========================
 
-## malawi cichlid v1 callset
+malawi cichlid v1 callset
 * 2200 individuals 
 * 48 genera 
 * 269 "species" 
+_________________________
 
 VCF location:<br/>
 ~/rds/rds-rd109-durbin-group/projects/cichlid/cichlid_g.vcf/main_set_2019-07-10/fAstCal1.2/GenotypeCorrected/depth_filter/malawi_variants/vcf
