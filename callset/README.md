@@ -1,7 +1,7 @@
 Cichlid genetic variants
 ========================
 
-## malawi cichlid v1 callset
+## Malawi cichlid v1 callset
 * **2200 individuals** 
 * **48 genera** 
 * **269 "species"** 
@@ -13,7 +13,7 @@ VCF location:<br/>
 biallelic VCF location:<br/>
 ~/rds/rds-rd109-durbin-group/projects/cichlid/cichlid_g.vcf/main_set_2019-07-10/fAstCal1.2/GenotypeCorrected/depth_filter/malawi_variants/biallelic 
 
-### malawi cichlids v1 summary
+### Malawi cichlids v1 summary
 
 * VCF_sites: Number of sites (lines discounting the header) in VCF
 * variants: Number of SNPs + indels
