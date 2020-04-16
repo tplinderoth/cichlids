@@ -1,0 +1,33 @@
+Astatotilapia	calliptera
+Alticorpus	peterdaviesi
+Aulonocara	"blue orange"
+Aulonocara	"slender orange back"
+Aulonocara	"yellow"
+Aulonocara	stuartgranti
+Chilotilapia	rhoadesii
+Copadichromis	chrysonotus
+Copadichromis	virginalis
+Cynotilapia	afra
+Dimidiochromis	kiwinge
+Diplotaxodon	"macrops black dorsal"
+Diplotaxodon	limnothrissa
+Fossorochromis	rostratus
+Labeotropheus	fuelleborni
+Labeotropheus	trewavasae
+Lethrinops	gossei
+Lethrinops	lethrinus
+Maylandia	"pearly"
+Maylandia	callainos
+Maylandia	emmiltos
+Maylandia	fainzilberi
+Maylandia	zebra
+Melanochromis	auratus
+Mylochromis	subocularis
+Otopharynx	argyrosoma
+Petrotilapia	genalutea
+Petrotilapia	microgalana
+Protomelas	ornatus
+Rhamphochromis	longiceps
+Trematocranus	placodon
+Tropheops	"chilumba"
+Tropheops	"yellow gular"
