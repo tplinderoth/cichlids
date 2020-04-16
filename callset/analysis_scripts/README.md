@@ -53,7 +53,7 @@ It requires the HEADER file, a 'METADATA' link to the cichlid metadata table, an
 
 speciesFst.pl is a wrapper around [VCFtools](https://vcftools.github.io/) to calculate per-site and genome-average Fst for all pairwise combinations of species provided in a list. The resulting Fst values are all nicely bundled together in two files.
 
-	./speciesFst.pl 
+	perl speciesFst.pl 
 	
 	speciesFst.pl [input]
 	
@@ -72,5 +72,5 @@ speciesFst.pl is a wrapper around [VCFtools](https://vcftools.github.io/) to cal
 	VCFtools must be installed and in user's PATH
 	
 	
-	/speciesFst.pl --spfile species_list_fst.txt --idfile malawi_cichlids_v1_sample_table.txt --vcf malawi_cichlid_v1_biallelic_chr1.vcf.gz --passonly --out malawi_radiation_chr1
+	perl speciesFst.pl --spfile species_list_fst.txt --idfile malawi_cichlids_v1_sample_table.txt --vcf malawi_cichlid_v1_biallelic_chr1.vcf.gz --passonly --out malawi_radiation_chr1
 	
