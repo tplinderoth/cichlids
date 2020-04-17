@@ -17,7 +17,7 @@ my $out = undef;
 my $comptype = 'all';
 
 die(qq/
-speciesFst.pl v $version;
+speciesFst.pl v $version
 
 speciesFst.pl [input]
 
