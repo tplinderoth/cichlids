@@ -55,7 +55,7 @@ speciesFst.pl is a wrapper around [VCFtools](https://vcftools.github.io/) to cal
 
 	perl speciesFst.pl 
 	
-	speciesFst.pl v 1.1.0;
+	speciesFst.pl v 1.1.0
 	
 	speciesFst.pl [input]
 	
