@@ -55,7 +55,7 @@ speciesFst.pl is a wrapper around [VCFtools](https://vcftools.github.io/) to cal
 
 	perl speciesFst.pl 
 	
-	speciesFst.pl v 1.1.0
+	speciesFst.pl v 1.2.0
 	
 	speciesFst.pl [input]
 	
@@ -66,17 +66,19 @@ speciesFst.pl is a wrapper around [VCFtools](https://vcftools.github.io/) to cal
 	--passonly  Use only PASS sites from FILTER field
 	--posfile   Position file with (1) chr, and (2) position of sites to analyze
 	--out       Output file name prefix (required)
-	--comptype  string specifying what pairwise species comparisons to make [all]
+	--comptype  string specifying what species comparisons to make [all]
 	
 	Genus and species names in spfile should match those in the idfile.
 	
 	comptype arguments, where INT refers to the species in the INT row from the top of the spfile:
+	multi      Fst among all species (not pairwise)
+	SET,multi  Fst among all species in SET = '[INT1,INT2,...,INTn]' (without the single quotes)
 	all        all pairwise comparisons
 	INT,all    pairwise comparisons between the INT species and all others
 	INT,down   pairwise comparisons between the INT species and all others below it
 	INT1,INT2  pairwise comparison betwen INT1 and INT2 species
 	
-	A set of species can be specified as '{INT1,INT2,...,INTn}' (without the single quotes) in place of INT
+	A set of species can be specified as '[INT1,INT2,...,INTn]' (without the single quotes) in place of INT
 	to specify multiple species, in which case all species in the first set will be compared to all species 
 	in the second set. 
 	
