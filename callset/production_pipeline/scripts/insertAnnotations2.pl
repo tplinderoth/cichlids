@@ -21,7 +21,7 @@ insertAnnotations.pl [options] <vcf file>
 OR
 cat <vcf file> | insertAnnotations.pl [options]
 
---alfile    File of outgroup alleles in ancAllele format
+--alfile    File of outgroup alleles in pafAlleles format
 --alfields  Column numbers of alleles to use from alleles file, 1-indexed and ','-separated
 --dpbounds  LowDP and HighDP bounds to annotate FILTER filed, format '<INT lower bound>,<INT upper bound>'
 --rmfilter  ','-delimited list of FILTER annotations to remove
