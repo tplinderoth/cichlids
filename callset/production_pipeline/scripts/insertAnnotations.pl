@@ -35,7 +35,7 @@ Notes:
 
 *For inferring ancestral alleles with parsimony it is assumed that outgroups in the pafAlleles file 
  are ordered with increasing divergence from the ingroup (greater column number = greater divergence).
- Alternatively, the outgroup columns can be passed in order of their increasind divergence from the
+ Alternatively, the outgroup columns can be passed in order of their increasing divergence from the
  ingroup using the --alfields option.
 
 *Parsimony currently only implemented for 3 outgroup case
