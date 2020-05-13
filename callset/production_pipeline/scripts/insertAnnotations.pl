@@ -6,7 +6,7 @@ use warnings;
 use strict;
 use Getopt::Long;
 use IO::Zlib;
-use warnings FATAL => 'all';
+#use warnings FATAL => 'all';
 
 my $version = '0.1.0';
 my $alfile = undef;
