@@ -52,5 +52,5 @@ biallelic VCF location:<br/>
 
 ### Updates
 
-**13.05.2020**
-Ancestral allele inference based on parsimony using the ougroups *Simochromis diagramma*, *Neolamprologus brichardi*, and *Oreochromis niloticus*. Updated all-variant and biallelic VCFs to version 1.2.
+**13.05.2020.**
+Ancestral allele inference based on parsimony using the outgroups *Simochromis diagramma*, *Neolamprologus brichardi*, and *Oreochromis niloticus*. Updated all-variant and biallelic VCFs to version 1.2.
