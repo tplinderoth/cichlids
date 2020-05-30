@@ -10,7 +10,7 @@ use strict;
 my $version = '1.0.0';
 
 die(qq/
-callsetTools.pl version 
+callsetTools.pl $version 
 
 callsetTools.pl [command]
 
