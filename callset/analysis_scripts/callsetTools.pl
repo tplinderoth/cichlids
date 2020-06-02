@@ -2,21 +2,25 @@
 
 # queryMeta.pl
 
-# requires bcftools (installed and in PATH)
+# requires bcftools and vcftools (installed and in PATH) for sum functions
 
 use warnings;
 use strict;
+use Getopt::Long;
 
-my $version = '1.0.0';
+my $version = '1.1.0';
 
 die(qq/
-callsetTools.pl $version 
+callsetTools.pl $version
+
+Requires bcftools and vcftools to be installed and in \$PATH
 
 callsetTools.pl [command]
 
 commands:
 sampleID     retrieve Sanger IDs for samples belonging to a group
-alleleFreq   calculate allele frequencies 
+alleleFreq   calculate allele frequencies
+convert      convert VCF to other formats (allows subsetting)
 \n/) if (!@ARGV || $ARGV[0] eq '--help' || $ARGV[0] eq '-h');
 
 
@@ -26,11 +30,105 @@ if ($command eq 'sampleID') {
 	sampleid();
 } elsif ($command eq 'alleleFreq') {
 	alleleFreq();
+} elsif ($command eq 'convert') {
+	convert();
 } else {
 	die("Unknown command $command\n");
 }
 
 exit;
+
+sub convert {
+
+die(qq/
+callsetTools convert [options] [format] [vcf]
+
+Format:
+beaglepl   Beagle genotype likelihood format
+geno       ANGSD geno format
+
+Options:
+subset      File listing individuals to include
+pass        Include only sites that 'PASS' according to FILTER field
+mafcount    Discard sites with fewer than INT minor allele counts
+scale       Scale likelihoods such that they sum to 1 for each individual
+chr         Comma-separated list of chromosome numbers (required for beaglepl and geno formats)
+
+Notes:
+*Keeps only biallelic sites.
+\n/) if (!@ARGV || scalar(@ARGV) < 2);
+
+my $vcf = pop @ARGV;
+die ("Unable to locate VCF $vcf: $!\n") if (!-f $vcf);
+
+my $format = pop @ARGV;
+
+my ($subset, $pass, $mafcount, $scale, $chr) = (undef, undef, 0, undef, undef);
+GetOptions('subset=s' => \$subset, 'pass' => \$pass, 'mafcount=i' => \$mafcount, 'scale' => \$scale, 'chr=s' => \$chr);
+my @chrn = sort {$a <=> $b} split(',',$chr) if ($chr);
+
+my $command="bcftools view -m2 -M2";
+$command .= " -f PASS" if ($pass);
+if ($subset) {
+	die("Unable to locate file of subset IDs $subset\n") if (!-f $subset);
+	$command .= " -S $subset -a";
+}
+$command .= " -c ${mafcount}:minor";
+if ($chr) {
+	$command .= " -r ";
+	foreach my $num (@chrn) {
+		$command .= "chr${num},"
+	}
+	$command =~ s/,$//;
+}
+$command .= " $vcf";
+
+my $fmt;
+if ($format eq 'beaglepl' || $format eq 'geno') {
+	$command .= " | vcftools --vcf - --BEAGLE-PL --stdout";
+	if ($chr) {
+		foreach my $num (@chrn) {
+			$command .= " --chr chr$num";
+		}
+	} else {
+		die("$format requires --chr\n");
+	}
+	$command .= " |";
+	$fmt = $format eq 'beaglepl' ? 1 : 2;
+} else {
+	die("Unrecognized format $format\n");
+}
+
+print STDERR "Reading from '$command'\n";
+
+open(my $stream, $command) or die("Unable to read input stream: $!\n");
+
+$" = "\t";
+while (<$stream>) {
+	if ($fmt == 1) {
+		#BEAGLEPL
+		print STDOUT $_;
+	} elsif ($fmt == 2) {
+		# GENO
+		next if ($_ =~ /^marker\b/);
+		my @l = split(/\s+/, $_);
+		print STDOUT "$1\t$2\t" if ($l[0] =~ /([^:]+):(\d+)/);
+		for (my $i=3; $i<=$#l; $i += 3) {
+			my @pl = @l[$i..$i+2];
+			if ($scale) {
+				my $sum = 0;
+				map {$sum += $_} @pl;
+				@pl = map {$_/$sum} @pl;
+			}
+			print STDOUT "@pl";
+			print STDOUT $i < $#l-2 ? "\t" : "\n";
+		}
+	}
+}
+
+close $stream;
+
+}
 
 sub alleleFreq {
 
