@@ -8,7 +8,7 @@ use warnings;
 use strict;
 use Getopt::Long;
 
-my $version = '1.1.1';
+my $version = '1.1.2';
 
 die(qq/
 callsetTools.pl $version
@@ -128,7 +128,7 @@ while (<$stream>) {
 			if ($scale) {
 				my $sum = 0;
 				map {$sum += $_} @pl;
-				@pl = map {$_/$sum} @pl;
+				@pl = map {sprintf "%.9g", $_/$sum} @pl;
 			}
 			print STDOUT "@pl";
 			print STDOUT $i < $#l-2 ? "\t" : "\n";
