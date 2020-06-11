@@ -9,7 +9,7 @@ use strict;
 use Getopt::Long;
 use Getopt::Std;
 
-my $version = '1.1.2';
+my $version = '1.2.0';
 
 die(qq/
 callsetTools.pl $version
@@ -219,7 +219,7 @@ foreach my $id (@order) {
 		}
 		$n++;
 	}
-	my $altfreq = $altsum / (2*$ndata);
+	my $altfreq = $ndata > 0 ? $altsum / (2*$ndata) : 0;
 	print STDOUT "$id\t$altfreq\t$n\t$ndata\n";
 }
 
