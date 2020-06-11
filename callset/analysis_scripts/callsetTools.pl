@@ -7,6 +7,7 @@
 use warnings;
 use strict;
 use Getopt::Long;
+use Getopt::Std;
 
 my $version = '1.1.2';
 
@@ -20,6 +21,7 @@ callsetTools.pl [command]
 commands:
 sampleID     retrieve Sanger IDs for samples belonging to a group
 alleleFreq   calculate allele frequencies
+multiFreq    calculate allele frequencies for a list of sites
 convert      convert VCF to other formats (allows subsetting)
 \n/) if (!@ARGV || $ARGV[0] eq '--help' || $ARGV[0] eq '-h');
 
@@ -30,6 +32,8 @@ if ($command eq 'sampleID') {
 	sampleid();
 } elsif ($command eq 'alleleFreq') {
 	alleleFreq();
+} elsif ($command eq 'multiFreq') {
+	multiFreq();
 } elsif ($command eq 'convert') {
 	convert();
 } else {
@@ -151,9 +155,15 @@ Assumes a header line is present. Allele frequencies will be calculated for each
 
 VCF:
 Indexed VCF file.
-\n/) if (!@ARGV || scalar(@ARGV) < 4);
+\n/) unless ((@ARGV && scalar(@ARGV) == 4) || @_);
 
-my ($chr, $pos, $idlist, $vcf) = @ARGV;
+#my ($chr, $pos, $idlist, $vcf) = @ARGV;
+my ($chr, $pos, $idlist, $vcf);
+if (@_) {
+	($chr, $pos, $idlist, $vcf) = @_;	
+} else {
+	($chr, $pos, $idlist, $vcf) = @ARGV;
+}
 
 die("VCF file $vcf does not exist\n") if (!-e $vcf);
 
@@ -172,6 +182,7 @@ while (<$listfh>) {
 		}
 	}
 }
+close $listfh;
 
 chomp(my $head = `bcftools view -h $vcf | tail -n -1`);
 my %groupidx;
@@ -210,6 +221,85 @@ foreach my $id (@order) {
 	}
 	my $altfreq = $altsum / (2*$ndata);
 	print STDOUT "$id\t$altfreq\t$n\t$ndata\n";
+}
+
+}
+
+sub multiFreq {
+die(qq/
+callsetTools.pl multiFreq [-v vcf file name | -V vcf list] [position file] [sample list file] {
+
+Prints ALT allele frequency for each group in the sample list file.
+
+Positon file:
+2-column TSV file with fields (1) chromosome and (2) position. Assumes no header.
+
+Sample list file:
+2-column file in sampleID output format where each row lists (1) Sanger ID of sample, (2) group identity.
+Assumes a header line is present. Allele frequencies will be calculated for each group.
+
+VCF file:
+Either the name of a single VCF file using -v or a file listing the VCFs to extract allele frequencies from with -V.
+It is assumed that VCFs have names in the format '*_chr1.vcf.gz' if using a list.
+\n/) if (!@ARGV || scalar @ARGV < 4);
+
+my $samplefile = pop @ARGV;
+die ("Unable to locate sample list file $samplefile\n") if (!-f $samplefile);
+
+my @sites;
+my $posfile = pop @ARGV;
+open(my $posfh, '<', $posfile) or die("Unable to locate position file $posfile: $!\n");
+while (<$posfh>) {
+	chomp;
+	push @sites, [split(/\s+/, $_)];
+}
+
+my %opts=();
+getopts('v:V:', \%opts);
+my %vcfs;
+if ($opts{v}) {
+	$vcfs{file} = $opts{v};
+	die("Unable to locate VCF file $vcfs{file}\n") if (!-e $vcfs{file});
+} elsif ($opts{V}) {
+	open(my $vcffh, '<', $opts{V}) or die("Unable to open VCF file list $opts{V}: $!\n");
+	while (<$vcffh>) {
+		chomp;
+		$vcfs{$1} = $_ if ($_ =~ /chr(\d+)\.vcf/);
+	}
+} else {
+	die("VCF file (-v) or VCF file list (-V) required\n");
+}
+die("No VCFs found\n") if (! %vcfs);
+
+my $header = "CHR\tPOS\tREF\tALT\tAA\tFILTER\tINFO";
+my $c = 0;
+foreach (@sites) {
+	my ($chr, $pos) =@{$_};
+	my $chrn = $1 if ($chr =~ /chr(\d+)/);
+	my $vcf = exists $vcfs{file} ? $vcfs{file} : $vcfs{$chrn};
+	
+	my $afout;
+	{
+		open local(*STDOUT), '>', \$afout;
+		alleleFreq($chrn, $pos, $samplefile, $vcf);
+	}
+
+	my @tok = split("\n",$afout);
+	if ($c == 0) {
+		for(my $i=2; $i<=$#tok; $i++) {
+			$header .= "\t$1" if ($tok[$i] =~ /^(\S+)/);
+		}
+		print STDOUT "$header\n";
+	}
+
+	my $site = "$chr\t$pos";
+	$site .= "\t$1\t$2\t$3\t$4\t$5" if ($tok[0] =~ /ref=(\w)\s+alt=(\w)\s+anc=(\w)\s+(\S+)\s+(\S+)/);
+	for (my $i=2; $i <= $#tok; $i++) {
+		$site .= "\t$1" if ($tok[$i] =~ /^\S+\s+(\S+)/);
+	}
+	print STDOUT "$site\n";
+
+	$c++;
 }
 
 }
