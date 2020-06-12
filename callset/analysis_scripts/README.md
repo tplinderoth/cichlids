@@ -4,13 +4,13 @@ Scripts for analyzing the cichlid callset
 ## callsetTools.pl
 
 callsetTools.pl is a collection of utilities for querying, manipulating, and analyzing VCFs. It's current functionality includes
-* Obtaining Sanger IDs for samples belong to a group such as genus, species, location, etc.
+* Obtaining Sanger IDs for samples belonging to a group such as genus, species, location, etc.
 * Calculating allele frequencies (+ REF/ALT/ANC alleles, quality, and missing data info) for any group or list of groups, e.g. species, at single or multiple sites.
-* Converting VCF or VCF subsets to other formats, e.g. BEAGLE, ANGSD geno, etc.
+* Converting VCF (includines subsets) to other formats, e.g. BEAGLE, ANGSD geno, etc.
 
 ### Example usage
 
-To obtain information for the main functions run without arguments or --help
+To obtain information for the main functions run without arguments or --help.
 
 	./analysis_scripts/callsetTools.pl
 	
@@ -26,7 +26,7 @@ To obtain information for the main functions run without arguments or --help
 	multiFreq    calculate allele frequencies for a list of sites
 	convert      convert VCF to other formats (allows subsetting)
 	
-To obtain information on how to run a specific command, run without arguments
+To obtain information on how to run a specific command, run without arguments.
 
 	./analysis_scripts/callsetTools.pl alleleFreq
 	
@@ -39,7 +39,7 @@ To obtain information on how to run a specific command, run without arguments
 	VCF:
 	Indexed VCF file.
 
-### Example for calculating allele information for a specific set of species.
+### Example for calculating allele frequencies for a specific set of species.
 First, gather the Sanger IDs for individuals within each species that you want to include in the allele frequency calculation:
 
 	./callsetTools.pl sampleID species ./example_files/species_list_fst.txt ./example_files/malawi_cichlids_v1_sample_table.txt > ./example_files/id_list_fst.txt
@@ -88,7 +88,7 @@ Now calculate allele frequencies for each species:
 	Tropheops_chilumba	1	16	16
 	Tropheops_yellow_gular	1	16	16
 
-If you want to calculate allele frequencies for all of these species over multiple sites at once, here's an example of how:
+If you want to calculate allele frequencies for all of the above species over multiple sites at once, here's an example of how:
 
 	./callsetTools.pl multiFreq -V ./example_files/malawi_biallelic1.2_vcfs.txt ./example_files/malawi_radiation_fst_sites.pos ./example_files/id_list_fst.txt > ./example_files/malawi_radiation_fst_sites.freq
 	
@@ -163,7 +163,7 @@ It requires the HEADER file, a 'METADATA' link to the cichlid metadata table, an
 	grep LabFue17 METADATA 
 	cichlid6994096  LabFue17        D05-F04 16.3    1       Mbuna           Labeotropheus   fuelleborni             Chilumba        Luwino_reef
 
-How to set the VCFDIR, METADATA, and HEADER links on the Cambridge CSD3 (assuming you are in this 'analysis_scrits' directory containing looksite.pl):
+How to set the VCFDIR, METADATA, and HEADER links on the Cambridge CSD3 (assuming you are in this 'analysis_scripts' directory containing looksite.pl):
 
 	ln -s ~/rds/rds-rd109-durbin-group/projects/cichlid/cichlid_g.vcf/main_set_2019-07-10/fAstCal1.2/GenotypeCorrected/depth_filter/malawi_variants/vcf1.2 VCFDIR
 
