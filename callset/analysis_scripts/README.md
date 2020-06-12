@@ -49,6 +49,13 @@ It requires the HEADER file, a 'METADATA' link to the cichlid metadata table, an
 	grep LabFue17 METADATA 
 	cichlid6994096  LabFue17        D05-F04 16.3    1       Mbuna           Labeotropheus   fuelleborni             Chilumba        Luwino_reef
 
+How to set the VCFDIR, METADATA, and HEADER links on the Cambridge CSD3 (assuming you are in this 'analysis_scrits' directory containing looksite.pl):
+	ln -s ~/rds/rds-rd109-durbin-group/projects/cichlid/cichlid_g.vcf/main_set_2019-07-10/fAstCal1.2/GenotypeCorrected/depth_filter/malawi_variants/vcf1.2 VCFDIR
+
+	ln -s ../200128.cichlid_callset_metadata.txt METADATA
+
+	ln -s ../HEADER HEADER
+
 ### speciesFst.pl
 
 speciesFst.pl is a wrapper around [VCFtools](https://vcftools.github.io/) to calculate per-site and genome-average Fst for all pairwise combinations of species provided in a list. The resulting Fst values are all nicely bundled together in two files.
