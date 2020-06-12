@@ -37,7 +37,9 @@ for $p (@pid) { defined $meta{$p} || die "error: can't find $p in metadata\n" ; 
 if ($feat && !defined $col{$feat}) { die "error: feature $feat is not defined\n" ; }
 $fc = $col{$feat} ;
 
-open (V, "bcftools view -H VCFDIR/malawi_cichlid_v1_chr$chr.vcf.gz chr$chr:$pos |") || die "error: can't access VCF\n" ;
+my $vcfv='1.2';
+
+open (V, "bcftools view -H VCFDIR/malawi_cichlid_v${vcfv}_chr$chr.vcf.gz chr$chr:$pos |") || die "error: can't access VCF\n" ;
 while (<V>) {
     chomp ; ($c, $p, $id, $ref, $alt, $qual, $filt, $info, $format, @g) = split /\t/ ;
     print "$c $p $ref $alt $info\n" ;
