@@ -9,7 +9,7 @@ use strict;
 use Getopt::Long;
 use Getopt::Std;
 
-my $version = '1.2.0';
+my $version = '1.2.1';
 
 die(qq/
 callsetTools.pl $version
@@ -198,6 +198,10 @@ foreach(keys %groupidx) {
 }
 
 my @vcfpos = split(/\s+/,`bcftools view -H -r chr$chr:$pos $vcf | tail -n 1`);
+if (!@vcfpos) {
+	print STDERR "WARNING: chr$chr $pos is missing from VCF\n";
+	return 1;
+}
 
 my $aa = 'N';
 $aa = $1 if ($vcfpos[7] =~ /AA=([^;|\s]+)/);
@@ -223,6 +227,7 @@ foreach my $id (@order) {
 	print STDOUT "$id\t$altfreq\t$n\t$ndata\n";
 }
 
+return 0;
 }
 
 sub multiFreq {
@@ -278,12 +283,14 @@ foreach (@sites) {
 	my $chrn = $1 if ($chr =~ /chr(\d+)/);
 	my $vcf = exists $vcfs{file} ? $vcfs{file} : $vcfs{$chrn};
 	
+	my $missing;
 	my $afout;
 	{
 		open local(*STDOUT), '>', \$afout;
-		alleleFreq($chrn, $pos, $samplefile, $vcf);
+		$missing = alleleFreq($chrn, $pos, $samplefile, $vcf);
 	}
 
+	next if ($missing);
 	my @tok = split("\n",$afout);
 	if ($c == 0) {
 		for(my $i=2; $i<=$#tok; $i++) {
