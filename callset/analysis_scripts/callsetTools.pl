@@ -27,20 +27,22 @@ convert      convert VCF to other formats (allows subsetting)
 
 
 my $command = shift @ARGV;
+my $rv = 0;
 
 if ($command eq 'sampleID') {
 	sampleid();
 } elsif ($command eq 'alleleFreq') {
-	alleleFreq();
+	$rv = alleleFreq();
+	$rv = 0 if ($rv == -9);
 } elsif ($command eq 'multiFreq') {
-	multiFreq();
+	$rv = multiFreq();
 } elsif ($command eq 'convert') {
 	convert();
 } else {
 	die("Unknown command $command\n");
 }
 
-exit;
+exit($rv);
 
 sub convert {
 
@@ -200,6 +202,10 @@ foreach(keys %groupidx) {
 my @vcfpos = split(/\s+/,`bcftools view -H -r chr$chr:$pos $vcf | tail -n 1`);
 if (!@vcfpos) {
 	print STDERR "WARNING: chr$chr $pos is missing from VCF\n";
+	return -9;
+}
+if ($vcfpos[4] =~ /,/) {
+	print STDERR "ERROR: chr$chr $pos is multiallelic. Allele frequency calculation only supported for biallelic sites\n";
 	return 1;
 }
 
@@ -283,14 +289,15 @@ foreach (@sites) {
 	my $chrn = $1 if ($chr =~ /chr(\d+)/);
 	my $vcf = exists $vcfs{file} ? $vcfs{file} : $vcfs{$chrn};
 	
-	my $missing;
+	my $afrv;
 	my $afout;
 	{
 		open local(*STDOUT), '>', \$afout;
-		$missing = alleleFreq($chrn, $pos, $samplefile, $vcf);
+		$afrv = alleleFreq($chrn, $pos, $samplefile, $vcf);
 	}
 
-	next if ($missing);
+	next if ($afrv == -9); # missing site
+	return($afrv) if ($afrv == 1); # multiallelic
 	my @tok = split("\n",$afout);
 	if ($c == 0) {
 		for(my $i=2; $i<=$#tok; $i++) {
@@ -309,6 +316,7 @@ foreach (@sites) {
 	$c++;
 }
 
+return 0;
 }
 
 sub sampleid {
