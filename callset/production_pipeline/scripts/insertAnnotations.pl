@@ -8,7 +8,7 @@ use Getopt::Long;
 use IO::Zlib;
 #use warnings FATAL => 'all';
 
-my $version = '0.1.0';
+my $version = '0.2.0';
 my $alfile = undef;
 my $alfields = undef;
 my $anctype = 'parsimony';
@@ -16,6 +16,8 @@ my $dpbounds = undef;
 my $vcf = undef;
 my $rmfilter = undef;
 my $fstart = 4;
+my $bedgraph = undef;
+my $bedlist = undef;
 
 die(qq/
 insertAnnotations.pl version $version
@@ -29,6 +31,8 @@ cat <vcf file> | insertAnnotations.pl [options]
 --anctype   Infer ancestral allele using 'parsimony' or as the 'major' allele among outgroups [$anctype]
 --dpbounds  LowDP and HighDP bounds to annotate FILTER field, format '<INT lower bound>,<INT upper bound>'
 --rmfilter  ','-delimited list of FILTER annotations to remove
+--bedgraph  Bed format file with annotations to add to the FILTER field
+--bedlist   ','-delimited list of FILTER annotations to use from bedgraph (ignore all others)
 
 Notes:
 *Assumes the same contig order in VCF and allele files.
@@ -38,12 +42,22 @@ Notes:
  Alternatively, the outgroup columns can be passed in order of their increasing divergence from the
  ingroup using the --alfields option.
 
-*Parsimony currently only implemented for 3 outgroup case
+*Parsimony currently only implemented for 3 outgroup case.
+
+*Particular FILTER annotations will be updated if the function that applies them (--dpbounds, --bedgraph)
+ is called.
+
+*Bedgraph must be sorted in same order as VCF.
 \n/) if (-t STDIN && !@ARGV);
 
-GetOptions('alfile=s' => \$alfile, 'alfields=s' => \$alfields, 'dpbounds=s' => \$dpbounds, 'rmfilter=s' => \$rmfilter, 'anctype=s' => \$anctype);
+GetOptions('alfile=s' => \$alfile, 'alfields=s' => \$alfields, 'dpbounds=s' => \$dpbounds, 'rmfilter=s' => \$rmfilter, 'anctype=s' => \$anctype,
+'bedgraph=s' => \$bedgraph, 'bedlist=s' => \$bedlist);
 
-my %userargs = ('--alfile' => $alfile, '--alfields' => $alfields, '--dpbounds' => $dpbounds, '--rmfilter' => $rmfilter, '--anctype' => $anctype);
+# this is for printing the command to the VCF header
+my %userargs = ('--alfile' => $alfile, '--alfields' => $alfields, '--dpbounds' => $dpbounds, '--rmfilter' => $rmfilter, '--anctype' => $anctype,
+'--bedgraph' => $bedgraph, '--bedlist' => $bedlist);
+# disable printing commands if not applicable
+$userargs{"--anctype"} = undef if (!$alfile);
 
 # read in VCF
 
@@ -87,7 +101,7 @@ if ($alfile) {
 
         $l1 = <$alfh>; # first site of new chr
         die("No sites in allele file $alfile\n") if (!$l1);
-        
+
 	if (lc($anctype) eq 'parsimony') {
 		$aamethod = 1;
 		@parstable = makeLookup(\%tree_counts);
@@ -103,7 +117,7 @@ if ($alfile) {
 
 # initialize filter annotation
 
-my (@dpcutoff, %delfilter);
+my (@dpcutoff, %delfilter, $bedfh);
 
 if ($dpbounds) {
 	
@@ -113,8 +127,21 @@ if ($dpbounds) {
 	} elsif ($dpcutoff[0] >= $dpcutoff[1]) {
 		die("ERROR: --dpbounds upper bound must be greater than the lower bound value\n");
 	}
+	
+	$delfilter{HighDP} = 1;
+	$delfilter{LowDP} = 1;
 }
 
+my %bedfilter;
+if ($bedgraph) {
+	die("Must provide --bedlist if using a bedgraph file of filter annotations\n") if (!$bedlist);
+	open($bedfh, '<', $bedgraph) or die("Unable to open bedgraph file $bedgraph: $!\n");
+	foreach (split(/,/, $bedlist)) {
+		$delfilter{$_} = 1;
+		$bedfilter{$_} = 1;
+	}
+	$bedlist =~ s/,/\|/g;
+}
 
 if ($rmfilter) {
 	foreach my $filter_anno (split(/,/,$rmfilter)) {
@@ -136,6 +163,11 @@ $command .= "\">\n";
 my $aa_string = "##INFO=<ID=AA,Number=1,Type=String,Description=\"Ancestral Allele\">\n";
 my $lowdp_string = "##FILTER=<ID=LowDP,Description=\"Site DP is less than median site DP -25%\">\n";
 my $highdp_string = "##FILTER=<ID=HighDP,Description=\"Site DP is greater than median site DP +25%\">\n";
+my $lowcov_string = "##FILTER=<ID=LowCov,Description=\"Total coverage among QC subset individuals below 0.05 quantile\">\n";
+my $excesscov_string = "##FILTER=<ID=ExcessCov,Description=\"Total coverage among QC subset individuals above 0.95 quantile\">\n";
+my $lowmq_string = "##FILTER=<ID=LowMQ,Description=\"Root mean square map quality below 35 for QC subset individuals\">\n";
+my $mqzero_string = "##FILTER=<ID=ExcessMQ0,Description=\"Fraction of reads with map quality zero among QC subset individuals greater than 0.2\">\n";
+my $nocov_string = "##FILTER=<ID=NoCov,Description=\"No mapped reads among QC subset individuals\">\n";
 
 my @headorder = ('fileformat', 'reference', 'contig', 'INFO', 'FILTER', 'FORMAT', 'ALT', 'other'); # header order
 
@@ -144,13 +176,13 @@ my %header = (fileformat => undef, ALT => undef, FILTER => undef, INFO => undef,
 my %seen = (aa => 0, lowdp => 0, highdp => 0);
 
 my $hline;
+my $filter;
 while (($hline = <$vcffh>) =~ /^##/) {
 	if ($hline =~ /^##([^=]+)/i) {
 		my $annotation = $1;
-		
-		if ($rmfilter && $annotation eq 'FILTER') {
-			my $filter_id = $1 if ($hline =~ /^##FILTER=<ID=([^,]+)/);
-			next if (exists $delfilter{$filter_id});
+
+		if (($rmfilter || $bedgraph) && $hline =~ /^##FILTER=<ID=([^,]+)/) {
+			next if exists $delfilter{$1}
 		}
 
 		if ($alfile && $hline =~ /INFO=<ID=AA/) {
@@ -173,9 +205,15 @@ while (($hline = <$vcffh>) =~ /^##/) {
 	}
 }
 
-push @{$header{INFO}}, "${aa_string}" if ($alfile && !$seen{aa});
-push @{$header{FILTER}}, "${lowdp_string}" if ($dpbounds && !$seen{lowdp});
-push @{$header{FILTER}}, "${highdp_string}" if ($dpbounds && !$seen{highdp});
+push @{$header{INFO}}, $aa_string if ($alfile && !$seen{aa});
+push @{$header{FILTER}}, $lowdp_string if ($dpbounds && !$seen{lowdp});
+push @{$header{FILTER}}, $highdp_string if ($dpbounds && !$seen{highdp});
+push @{$header{FILTER}}, $nocov_string if ($bedfilter{NoCov});
+push @{$header{FILTER}}, $lowcov_string if ($bedfilter{LowCov});
+push @{$header{FILTER}}, $excesscov_string if ($bedfilter{ExcessCov});
+push @{$header{FILTER}}, $lowmq_string if ($bedfilter{LowMQ});
+push @{$header{FILTER}}, $mqzero_string if ($bedfilter{ExcessMQ0});
+
 push @{$header{other}}, $command;
 
 foreach my $tag (@headorder) {
@@ -188,10 +226,13 @@ print STDOUT $hline;
 
 # process VCF sites
 
+my %filtercounts;
+map { $filtercounts{$1} = 0 if $_ =~ /ID=([^,]+)/ } @{$header{FILTER}};
+
+my $vcfchr;
+my @bedtok = (0,0,0);
 my $site_count = 0;
 my $aa_count = 0;
-my $low_count = 0;
-my $high_count = 0;
 my @tok;
 
 $" = "\t";
@@ -199,6 +240,18 @@ $" = "\t";
 while (<$vcffh>) {
 	@tok = split(/\s+/, $_);
 	$site_count++;
+
+	# update begraph region
+	if ($bedgraph) {
+		$vcfchr = $1 if ($tok[0] =~ /(\d+)$/);
+		while (!eof($bedfh) && $bedtok[0] < $vcfchr) {
+			bedsplit(\@bedtok, $bedfh);
+		}
+		while (!eof($bedfh) && $bedtok[2] < $tok[1]) {
+			bedsplit(\@bedtok, $bedfh);
+			last if ($bedtok[0] != $vcfchr);
+		}
+	}
 	
 	# ancestral allele
 	if ($alfile) {
@@ -370,38 +423,50 @@ while (<$vcffh>) {
 		}
 	}
 
-	# coverage filters
-	if ($dpbounds) {
-		my $dp = $1 if ($tok[7] =~ /DP=(\d+)/);
-		if (defined $dp) {
-			my $dptag = undef;
-			if ($dp < $dpcutoff[0]) {
-				$dptag = "LowDP";
-				$low_count++;
-			} elsif ($dp > $dpcutoff[1]) {
-				$dptag = "HighDP";
-				$high_count++;
-			}
-
-			if ($dptag) {
-				if ($tok[6] eq "." || $tok[6] eq "PASS") {
-					$tok[6] = $dptag;
-				} else {
-					$tok[6] .= ";${dptag}" if ($tok[6] !~ /$dptag/);
+	# apply filters
+	if ($dpbounds || $bedgraph) {
+		my @filter_annotations;
+	
+		# coverage filters
+		if ($dpbounds) {
+			my $dp = $1 if ($tok[7] =~ /DP=(\d+)/);
+			if (defined $dp) {
+				if ($dp < $dpcutoff[0]) {
+					push @filter_annotations, "LowDP";
+				} elsif ($dp > $dpcutoff[1]) {
+					push @filter_annotations, "HighDP";
 				}
 			} else {
-				$tok[6] = "PASS" if ($tok[6] eq ".");
+				print STDERR "No DP info for $tok[0] $tok[1], INFO=<$tok[7]>\n";
+			}
+		}
+
+		# bedgraph filters
+		if ($bedgraph && $vcfchr == $bedtok[0] && $tok[1] > $bedtok[1] && $tok[1] <= $bedtok[2]) {
+			for (my $i=3; $i <= $#bedtok; $i++) {
+				push @filter_annotations, $bedtok[$i] if ($bedtok[$i] ne "0" && exists $bedfilter{$bedtok[$i]});
+			}
+		}
+
+		# update FILTER field with new annotations
+		if (@filter_annotations) {
+			if ($tok[6] eq "." || $tok[6] eq "PASS") {
+				$tok[6] = join(';',@filter_annotations);
+			} else {
+				$tok[6] .= ";" . join(';',@filter_annotations);
 			}
 		} else {
-			print STDERR "No DP info for $tok[0] $tok[1], INFO=<$tok[7]>\n"
+			$tok[6] = "PASS" if ($tok[6] eq '.');
 		}
 	}
+	map {$filtercounts{$_}++ unless $_ eq '.'} split(':', $tok[6]);
 
 	print STDOUT "@tok\n";
 }
 
 close $vcffh;
-close $alfh;
+close $alfh if ($alfile);
+close $bedfh if ($bedgraph);
 
 # print counts
 print STDERR "Last contig processed: $tok[0]\n";
@@ -415,12 +480,15 @@ if ($alfile) {
 	}
 }
 
-if ($dpbounds) {
-	print STDERR "Number LowDP: $low_count\n";
-	print STDERR "Number HighDP: $high_count\n";
-}
+map { print STDERR "Number $1: $filtercounts{$1}\n" if $_ =~ /ID=([^,]+)/ } @{$header{FILTER}};
 
 exit;
+
+sub bedsplit {
+	my ($tok, $fh) = @_;
+	@$tok = split(/\s+/, readline($$fh));
+	$$tok[0] = $1 if $$tok[0] =~ /(\d+)$/;
+}
 
 sub makeLookup {
 ### returns species representing the ancestral allele ###
