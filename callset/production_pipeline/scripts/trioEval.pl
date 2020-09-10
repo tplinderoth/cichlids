@@ -101,11 +101,12 @@ while (<$vcffh>) {
 	}
 
 	# get subfields of needed info
-	my $gqidx = 0;
-	foreach my $infosub (split(':', $vcftok[8])) {
-		last if $infosub eq 'GQ';
-		$gqidx++;
+	my $gqidx;
+	my @format = split(':', $vcftok[8]);
+	for ($gqidx = 0; $gqidx <= $#format; $gqidx++) {
+		last if ($format[$gqidx] eq 'GQ')
 	}
+	die("ERROR: No genotype quality information for $vcftok[0] $vcftok[1]\n") if ($mingq && ($gqidx < 1 || $gqidx > $#format));
 
 	# parse parental genotypes
 	my @p1 = split(':', $vcftok[$famidx[0]]);
@@ -115,7 +116,7 @@ while (<$vcffh>) {
 
 	# check if parental genotypes are appropriate for analysis
 	my ($p1allele, $p2allele);
-	next if ($mingq && ($p1[$gqidx] < $mingq || $p2[$gqidx] < $mingq));
+	next if ($mingq && ($p1[$gqidx] eq '.' || $p2[$gqidx] eq '.' || $p1[$gqidx] < $mingq || $p2[$gqidx] < $mingq));
 	next if ($p1[0] =~ /\./ || $p2[0] =~ /\./);
 	
 	if ($p1geno[0] == $p1geno[1]) {
