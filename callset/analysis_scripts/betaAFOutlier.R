@@ -205,6 +205,7 @@ testObserved <- function(obs, null) {
 		for (i in 1:nrow(null)) p[which(afdiff > null$lower[i] & afdiff <= null$upper[i])] = pval[i]
 		obs$pval[chridx] = p
 	}
+	obs$pval[obs$pval < 0] = 0 # prevent negative values due to imprecision
 
 	# calculate q-values
 	obs$qval = p.adjust(obs$pval, method="fdr") # Benjamini & Hochberg adjustment
@@ -256,8 +257,17 @@ plotFit <- function(obs, null) {
 
 pvalqq <- function(pobs) {
 	# makes a qq-plot of observed vs expected p-values
-	# obsp: vector of observed p-values
+	# pobs: vector of observed p-values
 
+	zeroidx = which(pobs <= 0)
+	if (length(zeroidx) > 0) {
+		pobs = pobs[-zeroidx]
+		cat(length(zeroidx),"sites with p-value 0 excluded from qq-plot\n")
+		if (length(pobs) < 1) {
+			cat("Skipping qq-plot because no sites with nonzero p-value\n")
+			return(0)
+		}
+	}
 	p.expect <- sort(-log10(runif(length(pobs)))) # generate expected p-values
 	plot(p.expect, sort(-log10(pobs)), xlab='-log10(unif[0,1])', ylab='-log10(observed p-values)', main='p-value qqplot')
 	abline(0,1, col="red",lty=2)
