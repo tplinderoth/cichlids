@@ -8,7 +8,7 @@
 
 parseArgs <- function(args) {
 
-	userin = list(dipn=NA, fstbar=NA, obsfreq=NA, outnames=NA, ancmethod=0, seed=NULL, qq=NULL)
+	userin = list(dipn=NA, fstbar=NA, obsfreq=NA, outnames=NA, ancmethod=0, seed=NULL, qq=NULL, ancbin=0)
 
 	# parse required input
 	userin$dipn = as.numeric(strsplit(args[1],',')[[1]])
@@ -21,9 +21,18 @@ parseArgs <- function(args) {
 
 	userin$obsfreq <- read.table(args[3], head=TRUE)
 	colnames(userin$obsfreq) = c("chr", "pos", "pop1f", "pop2f")
-	cat(paste0("Observed frequencies file contains ", nrow(userin$obsfreq), " sites\n"))
+	nsites = nrow(userin$obsfreq)
+	cat(paste0("Observed frequencies file contains ", nsites, " sites\n"))
+	# Discard nonvariable sites
+	fixedidx = which((userin$obsfreq$pop1f == 0 & userin$obsfreq$pop2f == 0) | (userin$obsfreq$pop1f == 1 & userin$obsfreq$pop2f == 1))
+	nfix = length(fixedidx)
+	if (nfix > 0) {
+		userin$obsfreq = userin$obsfreq[-fixedidx,]
+		cat("Pruned ", nfix, "novariable sites\n")
+		if (!nrow(userin$obsfreq)) stop("No input sites are variable")
+	}
 
-	suffix=c(".dist", ".ancf", ".sigtest", ".pdf", "_qqplot.png")
+	suffix=c(".dist", ".ancp", ".sigtest", ".pdf", "_qqplot.png")
 	userin$outnames = paste0(args[4],suffix)
 
 	# parse optional input
@@ -40,6 +49,11 @@ parseArgs <- function(args) {
 		} else if (args[i] == "--plotqq") {
 			userin$qq = 1
 			i = i-1
+		} else if (args[i] == "--ancbin") {
+			if (i+1 <= nargs) userin$ancbin = as.numeric(args[i+1]) else stop("--ancbin requires a value in [0,1]")
+			if (userin$ancbin < 0 || userin$ancbin > 1) stop("--ancbin argument out of range [0,1]")
+		} else {
+			stop(paste("Unknown argument,", args[i]))
 		}
 		i = i+2
 	}
@@ -47,13 +61,13 @@ parseArgs <- function(args) {
 	return(userin)
 }
 
-expected_af_prob <- function(ndip, binwidth) {
+expected_af_prob <- function(ndip, binwidth=0) {
 	# Calculates the expected probability of randomly sampling a site
 	# from binned MAF categories. Based on neutral 1/x prior where x is 
 	# the allele frequency.
  
 	# ndip: diploid sample size
-	# binwidth: size of allele frequency bins
+	# binwidth: size of allele frequency bins, 0 means no binning
 
 	# unfolded SFS probabilities
 	n = 2*ndip
@@ -67,27 +81,39 @@ expected_af_prob <- function(ndip, binwidth) {
 	
 	# folded sfs (MAF) probabilities
 	sfs.fold = sapply(1:ndip, function(x,sfs,n){ifelse(x<ndip, sfs[x]+sfs[n-x], sfs[x])}, sfs=sfs, n=n)
-
-	probs = data.frame(lower=seq(from=0,to=(0.5-binwidth),by=binwidth), upper=seq(from=binwidth,to=0.5,by=binwidth), prob=0)
-	j=1
-	for(i in 1:length(sfs.fold)) {
-		if (i/n > probs$upper[j]) j = j+1
-		probs$prob[j] = probs$prob[j] + sfs.fold[i]
-	}
+	
+	step = ifelse(binwidth, binwidth, 1/n)
+	probs = data.frame(lower=seq(from=0,to=(0.5-step),by=step), upper=seq(from=step,to=0.5,by=step), prob=0)
+	if (binwidth) {
+		# this is for using binned ancestral probabilities
+		j=1
+		for(i in 1:length(sfs.fold)) {
+			if (i/n > probs$upper[j]) j = j+1
+			probs$prob[j] = probs$prob[j] + sfs.fold[i]
+		}
+	} else probs$prob = sfs.fold
 
 	return(probs)
 }
 
-empiric_af_prob <- function(af, binwidth) {
+empiric_af_prob <- function(af, binwidth=0, pop1n, pop2n, weight=TRUE) {
 	# Calculates the probability of randomly sampling a site
 	# from binned MAF category. Ancestral allele frequency
 	# considered to be average among descedant pops.
 
 	# af: a matrix where each row is a site and columns are allele frequencies
-	# binwidth: size of allele frequency bins
-
-	avgf = (af[,1] + af[,2])/2
+	# binwidth: size of allele frequency bins, 0 means no binning
+	# pop1n: diploid size for pop1
+	# pop2n: diploid size for pop2
+	# weight descedant population allele frequencies by sample size
+	
+	ndip = pop1n + pop2n
+	if (weight) avgf = pop1n/ndip*af[,1] + pop2n/ndip*af[,2] else avgf = (af[,1] + af[,2])/2
 	avgf[avgf > 0.5] = 1-avgf[which(avgf>0.5)] # convert to MAF
+	if (!binwidth) {
+		if (is.null(ndip)) stop("Unbinned, empiric ancestral prior requires total population sample size")
+		binwidth = 1/(2*ndip)
+	}
 	probs = data.frame(lower=seq(from=0,to=(0.5-binwidth),by=binwidth), upper=seq(from=binwidth,to=0.5,by=binwidth), prob=NA)
 	probs$prob=unname(table(cut(avgf, breaks=seq(from=0,to=0.5,by=binwidth),include.lowest=TRUE, right=FALSE)))
 	probs$prob = probs$prob/sum(probs$prob)
@@ -95,7 +121,8 @@ empiric_af_prob <- function(af, binwidth) {
 	return(probs)
 }
 
-BaldingNicholsSamp <- function(nsamp, fst, ancf) {
+
+BaldingNicholsSamp <- function(nsamp, fst, ancf, samp=0) {
 	# Samples pairs of allele frequencies for each ancestral allele
 	# frequency bin and a given FST under the Balding-Nichols Beta
 	# distribution model.
@@ -103,16 +130,20 @@ BaldingNicholsSamp <- function(nsamp, fst, ancf) {
 	# n: number allele frequency pairs to draw for each ancestral allele frequency bin
 	# fst: genome-wide background FST between populations
 	# ancf: data.frame of ancestral allele frequency bin probabilities
+	# samp: 0 to set p0 to upper bin bound, 1 to uniformly sample p0 from bin
 
+	naf = nrow(ancf)
 	gensamp = list()
-	for (i in 1:nrow(ancf)) {
+	for (i in 1:naf) {
 		lb = ancf$lower[i]
 		ub = ancf$upper[i]
-		cat(paste0("Taking ", nsamp, " frequency pairs for ancestral bin (", lb, ",", ub, "]\n"))
-		p0 = runif(nsamp, min=lb, max=ub)
-		while (length(which(p0==lb))) {
-			p0[p0==lb] = runif(length(which(p0==lb)), min=lb, max=ub)
-		}
+		cat(paste0("Taking ", nsamp, "frequency pairs for ancestral p0 (", lb, ",", ub, "]\n"))
+		if (samp) {
+			p0 = runif(nsamp, min=lb, max=ub)
+			while (length(which(p0==lb))) {
+				p0[p0==lb] = runif(length(which(p0==lb)), min=lb, max=ub)
+			}
+		} else p0 = rep(ub, nsamp) # using bin upper bound because ancestral freq could never be less than singleton
 		alpha = (1-fst)/fst * p0
 		beta = (1-fst)/fst * (1-p0)
 		gensamp[[i]] = matrix(rbeta(2*nsamp, shape1=c(alpha,alpha), shape2=c(beta,beta)), nrow=nsamp, ncol=2)
@@ -284,37 +315,38 @@ fst: Genome-wide average FST value between groups being compared.
 allele frequency file: TSV file with columns (1) chromosome, (2) position, (3) pop1 allele frequency (4) pop2 allele frequency. Assumes header.
 out prefix: Output file name prefix to which '.dist', '.ancf', '.sigtest', and '.pdf' are appended
 \nOptional Input
---ancmethod <0|1>: Ancestral frequency method where 0 (default) uses empirical ancestral allele frequency prior, 1 uses expected frequency prior
---plotqq: Evoke to generate qq-plot of p-values
+--ancmethod <0|1>: Ancestral allele frequency method where 0 (default) uses empirical ancestral frequency prior, 1 uses expected frequency prior
+--ancbin <FLOAT in range [0,1]>: Ancestral allele frequency prior bin width [default: 0 (no binning)]
+--plotqq: Generate qq-plot of p-values
 --seed <INT>: Set a specific seed\n\n")
 
 options(show.error.messages=FALSE)
 stop()}
 
 dat = parseArgs(args)
-
+binwidth = dat$ancbin # width of ancestral allele frequency prior bins
 if (is.null(dat$seed)) dat$seed = round(runif(1,min=1,max=10^9))
 set.seed(dat$seed)
 cat(paste0("\nSeed set to ",dat$seed,"\n"))
 
 ## hard-coded parameters
-binwidth = 0.1 # width of allele frequency bins
 nsamp = 10^6 # number of allele frequency pairs to draw for each ancestral allele frequency
-diffwidth = 0.005 # width of allele frequency difference bin
+diffwidth = 0.01 # width of allele frequency difference bin
 
 ## calculate ancestral allele frequency probabilities
+if (binwidth) cat("\nAncestral frequency bin width set to ",binwidth,"\n") else cat("\nNot binning ancestral frequencies\n")
 ancf = NULL
 if (dat$ancmethod) {
-	cat("\nUsing expected ancestral allele frequencies\n")
+	cat("Using expected ancestral allele frequencies\n")
 	ancf = expected_af_prob(dat$dipn[3], binwidth)
 } else {
-	cat("\nEstimating ancestral allele frequencies from descendant pop frequencies\n")
-	ancf = empiric_af_prob(dat$obsfreq[,3:4], binwidth)
+	cat("Estimating ancestral allele frequencies from descendant pop frequencies\n")
+	ancf = empiric_af_prob(dat$obsfreq[,3:4], binwidth, dat$dipn[1], dat$dipn[2], weight=TRUE)
 }
 
 ## sample allele frequencies from beta for each ancestral frequency bin and given observed background FST
 cat("\nPerforming genetic sampling of allele frequencies\n")
-gensamp = BaldingNicholsSamp(nsamp, dat$fstbar, ancf)
+gensamp = BaldingNicholsSamp(nsamp, dat$fstbar, ancf, samp=ifelse(binwidth, 1, 0))
 
 ## sample allele counts from binomial given the allele frequencies that were drawn for pop1 and pop2
 cat("\nSampling allele counts\n")
@@ -322,7 +354,7 @@ countsamp = sampleCountsFreq(gensamp, dat$dipn[1], dat$dipn[2])
 rm(gensamp)
 
 ## calculate weighted absolute allele frequency difference probabilities
-diffprobs = afDiffProbs(countsamp, diffwidth, binwidth) # allele difference probabilties for each ancestral frequency
+diffprobs = afDiffProbs(countsamp, diffwidth, ancwidth=(ancf[1,2]-ancf[1,1])) # allele difference probabilties for each ancestral frequency
 nulldist = weightedDiffProbs(diffprobs, ancf)
 rm(countsamp)
 
