@@ -20,12 +20,12 @@ from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
 
 1) sampleID: Sequenced sample identifier.
 2) provider: Original specimen identifier.
-3) Morph: Ecomorph phenotype (benthic, littoral, or unassigned)
-4) Sex: Male, female, or unsexed
+3) Morph: Ecomorph phenotype (benthic, littoral, or unassigned).
+4) Sex: Male, female, or unsexed.
 5) Depth_Cat: Depth band at which samples were caught. Shallow (< 5m), intermediate (5-20m),
    deep (> 20m), or NA (unknown).
 6) SL: Standard length of specimen in millimeters.
-7..11) PC[1-5]: The first 5 principal components from a PCA of the genome-wide variation of
+7..11) PC[1-5]: The first 5 principal components from a PCA of the genome-wide genetic variation of
    Lake Masoko Astatotilapia calliptera.
 12) littoral_ancestry_q: Littoral admixture proportion from ADMIXTURE analysis.
 13) benthic_ancestry_q: Benthic admixture proportion from ADMIXTURE analysis.
@@ -33,7 +33,8 @@ from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
     (-0.02 < PC1 < 0.04), benthic (PC1 > 0.04). Note that the levels 'littoral', 'middle',
     and 'benthic' in this table correspond to 'low PC1', 'middle PC1', and 'high PC1' classes 
     in the paper. In the study individuals with PC1 > 0.04 comprise the genetically benthic 
-    subpopulation, while those with PC1 < 0.04 comprise the genetically littoral subpopulation.    
+    subpopulation, while those with PC1 < 0.04 comprise the genetically littoral subpopulation. The  
+    genetically littoral group was subdivided into 'low PC1' and 'middle PC1' classes.    
 15) gsdf_coverage: Average sequencing depth of duplicated region encompassing gsdf relative to the
     average depth from 38,320 bp of non-duplicated flanking sequence.
 16) gsdf_copies: The number of gsdf copies inferred from the relative gsdf sequencing depth
@@ -45,14 +46,14 @@ from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
      chr19-ins.
 19) chr19_21572413_ins_nalt: Number of copies of the chr19 insertion allele (chr19-ins) thought to
     be the causal Y variant.
-20) chr19_21572413_ins_read_counts: <Number reference reads>,<Number insertion reads> from 
+20) chr19_21572413_ins_read_counts: <Number reference reads>,<Number insertion reads> covering the 
     chr19-ins locus.
 21) chr7_17718711_nalt: Number of alternate alleles at the most significant GWAS SNP tagging
     chr7-ins.
 22) chr7_18086980_ins_nalt: Number of copies of the chr7 insertion allele (chr7-ins) thought to
     be the casual Y variant.
-23) chr7_18086980_ins_read_counts: <Number reference reads>,<Number insertion reads> from chr7-ins
-    locus.
+23) chr7_18086980_ins_read_counts: <Number reference reads>,<Number insertion reads> covering the
+    chr7-ins locus.
 24) multi_locus_geno: String indicating the genotypes at gsdf and the most significant GWAS SNPs
      <gsdf copies><number chr19:21581905 alternate alleles><number chr7:17718711 alternate alleles>
 25) multi_locus_geno_causal: String indicating the genotypes at the three causal sex determining
@@ -78,16 +79,16 @@ and multi_locus_geno_causal strings are coded as 'N'.
 4) species: Species.
 5) clade: Membership among the seven major Lake Malawi cichlid phylogenetic lineages (Mbuna, Utaka,
    deep, shallow benthic, Diplotaxodon, Rhamphochromis, Astatotilapia calliptera).
-6) location: Collection  locality.
-7) sublocation: Specific site of collection within the broader ('location') sampling region.
+6) location: Collection locality.
+7) sublocation: Specific site of collection within the broader sampling region/'location'.
 8) sex: Male, female, or unsexed.
 9) gsdf_copies: Number of gsdf copies carried by an individual.
 10) chr19-ins_GT: chr19-ins locus genotype in terms of 
     "<number reference alleles>/<number insertion alleles>".
-11) chr19-ins_AC: <Number reference reads>,<Number insertion reads> from chr19-ins locus.
+11) chr19-ins_AC: <Number reference reads>,<Number insertion reads> covering the chr19-ins locus.
 12) chr7-ins_GT: chr7-ins locus genotype in terms of 
     "<number reference alleles>/<number insertion alleles>".
-13) chr7-ins_AC: <Number reference reads>,<Number insertion reads> from chr7-ins locus.
+13) chr7-ins_AC: <Number reference reads>,<Number insertion reads> covering the chr7-ins locus.
 
 Missing values for the location, sublocation, and sex are coded as 'NA'. Missing genotypes for
 chr19-ins_GT and chr7-ins_GT are coded as './.'.
@@ -124,7 +125,7 @@ chr19-ins_GT and chr7-ins_GT are coded as './.'.
 3) af: Alternate allele frequency.
 4) beta: Fitted genetic effect for SNP.
 5) se: Standard error for the genetic effect.
-6) p_lrt: p-value from the likelihood ratio test for a genetic association.
+6) p_lrt: p-value from the likelihood ratio test for a genetic association with sex.
 
 ##################################################################################################
 ### Description of column names in normalised_coverage_100bp_XX_XY.txt file                    ###
@@ -149,9 +150,9 @@ chr19-ins_GT and chr7-ins_GT are coded as './.'.
 2) BP_A: Physical position of focal SNP on chromosome A.
 3) SNP_A: Name of focal SNP.
 4) CHR_B: Chromosome of second SNP.
-5) BP_B: Physical position of secondary SNP on chromosome B.
-6) SNP_B: Name of secondary SNP.
-7) R2: Linkage disequilibrium, r^2, between the focal and secondary SNPs.
+5) BP_B: Physical position of second SNP on chromosome B.
+6) SNP_B: Name of second SNP.
+7) R2: Linkage disequilibrium, r^2, between the focal and second SNPs.
 
 ###########################################################
 ### Description of fAstCal1.2_chr7_annotations.gtf file ###
