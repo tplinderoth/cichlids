@@ -5,8 +5,8 @@ in divergent ecomorphs of an African crater lake cichlid" by Munby *et al*. (202
 Commands and code used for analyses are contained in [Munby_etal_2021_code.txt](./Munby_etal_2021_code.txt)
 <br>
 
-All of the source data needed to regenerate figures and results using the R code in XX is available
-at dryiad_url
+All of the source data needed to regenerate figures and results using the R code in 
+[Munby_etal_2021_code.txt](./Munby_etal_2021_code.txt) is available at dryiad_url
 
 ### Scripts used to perform analyses
 
