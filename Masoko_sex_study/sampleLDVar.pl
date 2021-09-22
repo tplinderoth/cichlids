@@ -107,7 +107,7 @@ while ($i < $nsamp) {
 	my $snp = $sites[$draw];
 	my @pos = split(':',$snp);
 	if ($pos[1]-$maxdist > 0 && $pos[1] + $maxdist <= $chrlen{$pos[0]}) {
-		my $rv = system("plink --bfile $plinkprefix --r2 --ld-snp $snp --ld-window-kb $ldkb --ld-window 99999 --ld-window-r2 0 --out $outprefix\n");
+		my $rv = system("plink --bfile $plinkprefix --r2 --ld-snp $snp --ld-window-kb $ldkb --ld-window $maxdist --ld-window-r2 0 --out $outprefix\n");
 		if ($rv != -1) {
 			open(my $plinkfh, '<', "${outprefix}.ld") or die("Unable to open plink LD file ${outprefix}.ld: $!\n");
 			<$plinkfh>; # skip header
