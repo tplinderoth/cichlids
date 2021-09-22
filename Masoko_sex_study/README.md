@@ -6,7 +6,7 @@ Commands and code used for analyses are contained in [Munby_etal_2021_code.txt](
 <br>
 
 All of the source data needed to regenerate figures and results using the R code in 
-[Munby_etal_2021_code.txt](./Munby_etal_2021_code.txt) is available at dryiad_url
+[Munby_etal_2021_code.txt](./Munby_etal_2021_code.txt) is available at <https://doi.org/10.5061/dryad.3tx95x6h0>
 
 ### Scripts used to perform analyses
 
