@@ -1,0 +1,1878 @@
+######################################################################################
+### Code used in the study "Differential use of multiple genetic sex determination ### 
+### systems in divergent ecomorphs of an African crater lake cichlid"              ###
+###                                                                                ###
+### Authors: Hannah Munby, Tyler Linderoth, Bettina Fischer, Mingliu Du, Grégoire  ###
+### Vernaz, Alexandra M. Tyers, Benjamin P. Ngatunga, Asilatu Shechonge, Hubert    ###
+### Denise, Shane A. McCarthy, Iliana Bista, Eric A. Miska, M. Emília Santos,      ###
+### Martin J. Genner, George F. Turner, Richard Durbin                             ###
+###                                                                                ###
+### Contact: Tyler Linderoth, tylerp.linderoth@gmail.com                           ###
+######################################################################################
+
+The following source data used by the R code to generate results and figures can be downloaded
+from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
+
+########################################################################
+### Description of column names in masoko_master_data.txt file       ###
+### Data for Astatotilapia calliptera samples from Lake Masoko.      ###
+########################################################################
+
+1) sampleID: Sequenced sample identifier.
+2) provider: Original specimen identifier.
+3) Morph: Ecomorph phenotype (benthic, littoral, or unassigned)
+4) Sex: Male, female, or unsexed
+5) Depth_Cat: Depth band at which samples were caught. Shallow (< 5m), intermediate (5-20m),
+   deep (> 20m), or NA (unknown).
+6) SL: Standard length of specimen in millimeters.
+7..11) PC[1-5]: The first 5 principal components from a PCA of the genome-wide variation of
+   Lake Masoko Astatotilapia calliptera.
+12) littoral_ancestry_q: Littoral admixture proportion from ADMIXTURE analysis.
+13) benthic_ancestry_q: Benthic admixture proportion from ADMIXTURE analysis.
+14) subpop: Group assignment according to genetic PC1. Littoral (PC1 < -0.02), middle 
+    (-0.02 < PC1 < 0.04), benthic (PC1 > 0.04). Note that the levels 'littoral', 'middle',
+    and 'benthic' in this table correspond to 'low PC1', 'middle PC1', and 'high PC1' classes 
+    in the paper. In the study individuals with PC1 > 0.04 comprise the genetically benthic 
+    subpopulation, while those with PC1 < 0.04 comprise the genetically littoral subpopulation.    
+15) gsdf_coverage: Average sequencing depth of duplicated region encompassing gsdf relative to the
+    average depth from 38,320 bp of non-duplicated flanking sequence.
+16) gsdf_copies: The number of gsdf copies inferred from the relative gsdf sequencing depth
+    (gsdf_coverage) in increments of 0.5. Relative depth <= 1.25 is two copies, (1.25,1.75] is
+    three copies, (1.75, 2.25] is four copies, etc.
+17) chr7_18098212_nalt: Number of alternate alleles at the most significant GWAS SNP tagging 
+     the gsdf duplication.
+18) chr19_21581905_nalt: Number of alternate alleles at the most significant GWAS SNP tagging
+     chr19-ins.
+19) chr19_21572413_ins_nalt: Number of copies of the chr19 insertion allele (chr19-ins) thought to
+    be the causal Y variant.
+20) chr19_21572413_ins_read_counts: <Number reference reads>,<Number insertion reads> from 
+    chr19-ins locus.
+21) chr7_17718711_nalt: Number of alternate alleles at the most significant GWAS SNP tagging
+    chr7-ins.
+22) chr7_18086980_ins_nalt: Number of copies of the chr7 insertion allele (chr7-ins) thought to
+    be the casual Y variant.
+23) chr7_18086980_ins_read_counts: <Number reference reads>,<Number insertion reads> from chr7-ins
+    locus.
+24) multi_locus_geno: String indicating the genotypes at gsdf and the most signfiicant GWAS SNPs
+     <gsdf copies><number chr19:21581905 alternate alleles><number chr7:17718711 alternate alleles>
+25) multi_locus_geno_causal: String indicating the genotypes at the three causal sex determining
+    loci <number gsdf copies><number chr19-ins alleles><number chr7-ins alleles>
+26..29) gsdf_cpm_liver|eye|analfin|gill: Expression level of gsdf in counts per million reads
+    mapped from RNAseq performed on liver, eye, anal fin, and gill tissues.
+30..33) id3_cpm_liver|eye|analfin|gill: Expression level of id3 in counts per million reads  
+    mapped from RNAseq performed on liver, eye, anal fin, and gill tissues.
+34..37) e2f2_cpm_liver|eye|analfin|gill: Expression level of e2f2 in counts per million reads  
+    mapped from RNAseq performed on liver, eye, anal fin, and gill tissues.
+
+####################################################################################################
+### Description of column names in Malawi_cichlids_sex_genotypes.txt                             ###
+### Data for samples from various species comprising the Malawi haplochromine cichlid radiation. ### 
+####################################################################################################
+
+1) sample_ID: Sequenced sample identifier.
+2) provider_ID: Original specimen identifier.
+3) genus: Genus.
+4) species: Species.
+5) clade: Membership among the seven major Lake Malawi cichlid phylogenetic lineages (Mbuna, Utaka,
+   deep, shallow benthic, Diplotaxodon, Rhamphochromis, Astatotilapia calliptera).
+6) location: Collection  locality.
+7) sublocation: Specific site of collection within the broader ('location') sampling region.
+8) sex: Male, female, or unsexed.
+9) gsdf_copies: Number of gsdf copies carried by an individual.
+10) chr19-ins_GT: chr19-ins locus genotype in terms of 
+    "<number reference alleles>/<number insertion alleles>".
+11) chr19-ins_AC: <Number reference reads>,<Number insertion reads> from chr19-ins locus.
+12) chr7-ins_GT: chr7-ins locus genotype in terms of 
+    "<number reference alleles>/<number insertion alleles>".
+13) chr7-ins_AC: <Number reference reads>,<Number insertion reads> from chr7-ins locus.
+
+###############################################################################################
+### Description of column names in gonad_gsdf_rnaseq.txt file                               ###
+### RNAseq data from the gonads of two male and two female Astatotilapia calliptera sampled ###
+### from the Itupi River.                                                                   ###
+###############################################################################################
+
+1) Seq_ID: Sequenced sample identifier.
+2) sample_accession: European Nucleotide Archive sample accession number.
+3) Tissue: Source tissue upon which RNAseq was performed.
+4) Sex: Male or female.
+5) Total_Reads: Total number of sequencing reads.
+6) Total_Mapped_Reads: Number of reads mapped to the fAstCal1.2 genome using bwa-mem.
+7) gsdf_read_total: Number of reads mapped to gsdf.
+8) gsdf_CPM: gsdf expression quantified in terms of counts per million reads mapped.
+9) gsdf_RPKM: gsdf expression quantified in terms of reads per exonic kilobases per million
+   mapped reads.
+
+############################################################################################
+### Description of column names in masoko_sex_gwas_[123].txt files                       ###
+### Results for tests of genome-wide associations between SNPs and sex among Masoko      ###
+### Astatotilapia calliptera. The first GWAS (1) was run using 596 males and 51 females. ###
+### The second GWAS (2) was run on 90 males that did not carry gsdf-dup and 51 females,  ###
+### whilt the third GWAS (3) was run on 28 males that did not possess gsdf-dup nor the   ###
+### chr19:21581905 alternate allele. The association tests were run using GEMMA 0.98.1   ###
+### on SNPs with a minimum minor allele frequency of 5%.                                 ###
+############################################################################################
+
+1) chr: Chromosome.
+2) ps: Physical position on chromosome.
+3) af: Alternate allele frequency.
+4) beta: Fitted genetic effect for SNP.
+5) se: Standard error for the genetic effect.
+6) p_lrt: p-value from the likelihood ratio test for a genetic association.
+
+##################################################################################################
+### Description of column names in normalised_coverage_100bp_XX_XY.txt file                    ###
+### Average relative sequencing depth for all female Astatotilapia calliptera (completely lack ###
+### gsdf-dup) compared to all males heterozygous for gsdf-dup. The per-site sequencing depth   ###
+### for each individual was normalized with respect to the average depth in ~19 kb sequence    ###
+### upstream and downstream (38,320 bp total) of the chr7 duplication breakpoints. These       ###
+### relative depths were then averaged across individuals and sites in 100 bp windows.         ###
+##################################################################################################
+
+1) Bin: Starting position of 100 bp bin on chromosome 7.
+2) XX_norm_mean: Relative sequence depth of females (entirely lack gsdf-dup).
+3) XY_norm_mean: Relative sequence depth of males heteroyzgous for gsdf-dup.
+
+################################################################################################
+### Description of columns in chr7_18098212.ld file                                          ###
+### Plink pairwise LD output file (run using --r2) showing the r^2 between chr7:18098212 and ###
+### all other chr7 SNPs.                                                                     ###
+################################################################################################
+
+1) CHR_A: Chromosome of focal SNP.
+2) BP_A: Physical position of focal SNP on chromosome A.
+3) SNP_A: Name of focal SNP.
+4) CHR_B: Chromosome of second SNP.
+5) BP_B: Physical position of secondary SNP on chromosome B.
+6) SNP_B: Name of secondary SNP.
+7) R2: Linkage disequilibrium, r^2, between the focal and secondary SNPs.
+
+###########################################################
+### Description of fAstCal1.2_chr7_annotations.gtf file ###
+###########################################################
+
+GTF format annotations file for chr7 in the fAstCal1.2 reference.
+
+####################################################################################################
+### Description of colums in chr[7|19]ins_genome_ld_sample.ldvar files                           ###
+### Statistics describing patterns of linkage disequilibrium for Masoko Astatotilapia calliptera ###
+### in 2 mb windows around SNPs across the genome with similar allele frequency to               ###
+### chr19:21581905 and chr7:17718711 (the most strongly sex associated SNPs in the GWAS tagging  ###
+### chr19-ins and chr7-ins).                                                                     ###
+####################################################################################################
+
+1) CHR: Chromosome.
+2) POS: Physical position on chromosome.
+3) N_SNPS: Number of SNPs with r^2 > 0.5 and within 1 mb of focal SNP.
+4) MEAN_DIST: Mean physical distance of the set of N_SNPS from the focal SNP.
+5) STDV_DIST: Standard deviation for the physical distance of the N_SNPS from the focal SNP.
+
+###########################################################################
+### Description of gsdf_subset_genome_bionj_tree_raxml_support.nwk file ###
+###########################################################################
+
+Newick format file for the genome-wide neighbor-joining tree consisting of Maylandia zebra,
+M. callainos, M. emmiltos, M. fainzilberi, and the outgroup Rhamphochromis longiceps. The file
+includes node support from 100 bootstrap replicates.
+
+#################################################################
+### Start R code that uses data in masoko_master_data.txt     ###
+### Includes code for Figures 2b, 3, S3, S4, S6, S5, S7       ###
+#################################################################
+
+## load libraries
+
+library(scales) # needed for alpha()
+library(ggplot2)
+library(ggpattern)
+
+## read in Masoko master data
+
+dat <- read.table('masoko_master_data.txt',head=TRUE,sep="\t")
+
+## generate subsets of the data for males based on Y allele type and subpopulation
+
+onesex = dat[which(dat$multi_locus_geno_causal == 300 | dat$multi_locus_geno_causal == 210 | 
+dat$multi_locus_geno_causal == 201 | dat$multi_locus_geno_causal == 400 | 
+dat$multi_locus_geno_causal == 200),]
+
+onesexm = onesex[which(onesex$Sex == "Male"),]
+
+onesexm.noben = onesexm[-which(as.character(onesexm$subpop) == "benthic"),]
+
+onesexm.noben2 = onesexm.noben[which(onesexm.noben$multi_locus_geno_causal == "300" | 
+onesexm.noben$multi_locus_geno_causal == "210" | onesexm.noben$multi_locus_geno_causal == "201"),]
+
+## Interaction between SD system and PC1 in explaining body size
+
+# model with 300, 210, and 201 sex systems
+modfit.reduce <- lm(SL ~ subpop + multi_locus_geno_causal, data=onesexm.noben2) # model without subpop x sex system interaction
+modfit.full <- lm(SL ~ subpop*multi_locus_geno_causal, data=onesexm.noben2) # full model with interaction
+anova(modfit.reduce, modfit.full) # test for significant interaction
+
+## SL vs Genetic PC1 regression (Figure S6)
+
+sex300.fit <- lm(SL ~ PC1, data=onesexm.noben2[which(onesexm.noben2$multi_locus_geno_causal == "300"),])
+sex210.fit <- lm(SL ~ PC1, data=onesexm.noben2[which(onesexm.noben2$multi_locus_geno_causal == "210"),])
+sex201.fit <- lm(SL ~ PC1, data=onesexm.noben2[which(onesexm.noben2$multi_locus_geno_causal == "201"),])
+
+pop.point = as.character(onesexm$subpop)
+pop.point[which(pop.point != "benthic")] = 1
+pop.point[which(pop.point != "1")] = 0
+pop.point = as.numeric(pop.point)
+pntcol = as.character(onesexm$multi_locus_geno_causal[which(onesexm$subpop != "benthic")])
+pntcol[which(pntcol != "300" & pntcol != "210" & pntcol != "201")] <- NA
+pntcol <- as.character(pntcol)
+pntcol[which(pntcol == "300")] = "steelblue2"
+pntcol[which(pntcol == "210")] = "maroon"
+pntcol[which(pntcol == "201")] = "gold3"
+pntcol = pntcol[-which(is.na(pntcol == TRUE))]
+pntcol.outline = replace(pop.point, which(pop.point == 1), "grey60")
+pntcol.outline = replace(pntcol.outline, which(pntcol.outline == 0), "grey40")
+
+#pdf(file='SL_vs_PC1_regression_v2.pdf')
+#x11()
+par(mar=c(5,5,5,5))
+
+plot(SL ~ PC1, pch=pop.point, cex=1.3, cex.axis=1.4, cex.lab=1.4, col=pntcol.outline, 
+ylab="Standard length (mm)", xlab="Genetic PC1", main = "Masoko males", data=onesexm)
+
+points(SL ~ PC1, pch=19, col=alpha(pntcol,0.6), cex=1.3, 
+data=onesexm[which(onesexm$subpop != "benthic" & (onesexm$multi_locus_geno_causal == "300" | 
+onesexm$multi_locus_geno_causal == "210" | onesexm$multi_locus_geno_causal == "201")),])
+
+abline(coefficients(sex300.fit)[1], coefficients(sex300.fit)[2], col="steelblue2", lwd=1.9)
+abline(coefficients(sex210.fit)[1], coefficients(sex210.fit)[2], col="maroon", lwd=1.9)
+abline(coefficients(sex201.fit)[1], coefficients(sex201.fit)[2], col="gold3", lwd=1.9)
+
+#dev.off()
+
+## Tests for differences in average length between different Y male types
+
+# t-test of 210 low PC1 != 201 low PC1
+t.test(x=onesexm.noben2$SL[onesexm.noben2$subpop == "littoral" & 
+onesexm.noben2$multi_locus_geno_causal == "210" ], y=onesexm.noben2$SL[onesexm.noben2$subpop 
+== "littoral" & onesexm.noben2$multi_locus_geno_causal == "201"], alternative="two.sided")
+
+# t-test of 210 middle PC1 != 201 middle PC1
+t.test(x=onesexm.noben2$SL[onesexm.noben2$subpop == "middle" & 
+onesexm.noben2$multi_locus_geno_causal == "210" ], y=onesexm.noben2$SL[onesexm.noben2$subpop 
+== "middle" & onesexm.noben2$multi_locus_geno_causal == "201"], alternative="two.sided")
+
+# t-test of 300 low PC1 != 210+201 low PC1
+t.test(x=onesexm.noben2$SL[onesexm.noben2$subpop == "littoral" & 
+onesexm.noben2$multi_locus_geno_causal == "300"], y=onesexm.noben2$SL[onesexm.noben2$subpop 
+== "littoral" & (onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")], alternative="two.sided")
+
+# t-test of 210+201 middle PC1 != 300 middle PC1
+t.test(x=onesexm.noben2$SL[onesexm.noben2$subpop == "middle" & 
+(onesexm.noben2$multi_locus_geno_causal == "210" | onesexm.noben2$multi_locus_geno_causal 
+== "201")], y=onesexm.noben2$SL[onesexm.noben2$subpop == "middle" & 
+onesexm.noben2$multi_locus_geno_causal == "300"], alternative="two.sided")
+
+# t-test of 210+201 middle PC1 != 210+201 low PC1
+t.test(x=onesexm.noben2$SL[onesexm.noben2$subpop == "middle" & 
+(onesexm.noben2$multi_locus_geno_causal == "210" | onesexm.noben2$multi_locus_geno_causal == "201") 
+], y=onesexm.noben2$SL[onesexm.noben2$subpop == "littoral" & 
+(onesexm.noben2$multi_locus_geno_causal == "210" | onesexm.noben2$multi_locus_geno_causal == "201")]
+, alternative="two.sided")
+
+# t-test of 300 low PC1 != 300 middle PC1
+t.test(x=onesexm.noben2$SL[onesexm.noben2$subpop == "littoral" & 
+onesexm.noben2$multi_locus_geno_causal == "300"], y=onesexm.noben2$SL[onesexm.noben2$subpop == 
+"middle" & onesexm.noben2$multi_locus_geno_causal == "300"], alternative="two.sided")
+
+# t-test of 210+201 low PC1 != 300 middle PC1
+t.test(x=onesexm.noben2$SL[which(onesexm.noben2$subpop == "littoral" & 
+(onesexm.noben2$multi_locus_geno_causal == "210" | onesexm.noben2$multi_locus_geno_causal == 
+"201"))], y=onesexm.noben2$SL[which(onesexm.noben2$subpop == "middle" & 
+onesexm.noben2$multi_locus_geno_causal == "300")], alternative="two.sided")
+
+# t-test of 300 low PC1 != 210+201 middle PC1
+t.test(x=onesexm.noben2$SL[which(onesexm.noben2$subpop == "littoral" & 
+onesexm.noben2$multi_locus_geno_causal == "300")], y=onesexm.noben2$SL[which(onesexm.noben2$subpop 
+== "middle" & (onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201"))], alternative="two.sided")
+
+# t-test of 300 males != 400 males
+t.test(x=onesexm$SL[which(onesexm$multi_locus_geno_causal == "300")], 
+y=onesexm$SL[which(onesexm$multi_locus_geno_causal == "400")], alternative="two.sided")
+
+## Comparison of male lengths stratified by Y allele and genetic background (Figure 3b)
+
+sex_sl_compare <- function (df=NULL, plot.title="SL by SD", outfile=NULL) {
+	if (is.null(df)) stop("No data.frame supplied to sex_sl_compare()")
+	if (!is.null(outfile)) {
+		pdf(file=outfile)
+	} else x11()
+
+	df$SDcode3 = NA
+	df$SDcode3[df$multi_locus_geno_causal == "300" & df$subpop == "littoral"] = 1
+	df$SDcode3[(df$multi_locus_geno_causal == "210" | df$multi_locus_geno_causal == "201") 
+	& df$subpop == "littoral"] = 2
+	df$SDcode3[df$multi_locus_geno_causal == "300" & df$subpop == "middle"] = 3
+	df$SDcode3[(df$multi_locus_geno_causal == "210" | df$multi_locus_geno_causal == "201") 
+	& df$subpop == "middle"] = 4
+	
+	sd.names=c("300", paste("210","201",sep="\n"), "300", paste("210","201",sep="\n"))
+	boxfill=c(rep("grey90",2), rep("grey50",2))
+	par(mar=c(6,5.5,4,4))
+	barpos=c(1,2,4,5)
+	
+	boxplot(SL ~ as.factor(SDcode3), names=c("","","",""), outline=FALSE, 
+	xlab=NULL, ylab="Standard length (mm)", main=plot.title, ylim=c(50,135), 
+	col=alpha(boxfill,0.3), at=c(1,2,4,5), lwd=2.5, cex.axis=1.8, cex.lab=1.8, data=df) 
+	# adjusted ylimit to accommodate annotations
+	
+	mtext(sd.names,1, at=barpos, padj=1, cex=1.4)
+	mtext("Sex system",1, at=3, padj=5, cex=1.4)
+
+	pointcol = rep(NA,nrow(df))
+	pointcol[df$multi_locus_geno_causal == "300"] = "steelblue2"
+	pointcol[df$multi_locus_geno_causal == "210"] = "maroon"
+	pointcol[df$multi_locus_geno_causal == "201"] = "gold3"
+	treat = levels(as.factor(df$SDcode3))
+	j = 1
+	for (i in treat) {
+		idx = which(as.character(df$SDcode3) == i)
+		xjitter = jitter(rep(barpos[j],length(idx)), amount=0.2)
+		points(SL ~ xjitter, ylim=c(50,125), col="grey60", pch=1, cex=1.3, data=df[idx,])
+		points(SL ~ xjitter, ylim=c(50,125), col=alpha(pointcol[idx], 0.6), 
+		pch=16, cex=1.3, data=df[idx,])
+		j = j+1
+	}
+}
+
+#sex_sl_compare(df=onesexm.noben2, outfile='SL_by_SD_boxplot_v2.pdf')
+sex_sl_compare(df=onesexm.noben2)
+
+## Comparison of male lenghts stratified by Y allele, genetic background,
+## and catch depth (Figure S7a)
+
+jitterbox_catchdepth2 <- function(df=NULL, plot.title="Depth-stratified SL by SD", outfile=NULL) {
+
+	if (is.null(df)) stop("No data.frame supplied to jitterbox_catchdepth2()")
+	if (!is.null(outfile)) {
+		pdf(file=outfile)
+	} else x11()
+
+	df$multi_locus_geno_causal = as.factor(df$multi_locus_geno_causal)
+
+	df$SDcode3 = NA
+	df$SDcode3[df$multi_locus_geno_causal == "300" & df$subpop == "littoral" & 
+	df$Depth_Cat == "Shallow"] = 1
+	df$SDcode3[df$multi_locus_geno_causal == "300" & df$subpop == "littoral" & 
+	df$Depth_Cat == "Intermediate"] = 2
+	df$SDcode3[df$multi_locus_geno_causal == "300" & df$subpop == "littoral" & 
+	df$Depth_Cat == "Deep"] = 3
+	df$SDcode3[(df$multi_locus_geno_causal == "210" | df$multi_locus_geno_causal == "201" ) & 
+	df$subpop == "littoral" & df$Depth_Cat == "Shallow"] = 4
+	df$SDcode3[(df$multi_locus_geno_causal == "210" | df$multi_locus_geno_causal == "201" ) & 
+	df$subpop == "littoral" & df$Depth_Cat == "Intermediate"] = 5
+	df$SDcode3[(df$multi_locus_geno_causal == "210" | df$multi_locus_geno_causal == "201" ) & 
+	df$subpop == "littoral" & df$Depth_Cat == "Deep"] = 6
+	df$SDcode3[df$multi_locus_geno_causal == "300" & df$subpop == "middle" & 
+	df$Depth_Cat == "Shallow"] = 7
+	df$SDcode3[df$multi_locus_geno_causal == "300" & df$subpop == "middle" & 
+	df$Depth_Cat == "Intermediate"] = 8
+	df$SDcode3[df$multi_locus_geno_causal == "300" & df$subpop == "middle" & 
+	df$Depth_Cat == "Deep"] = 9
+	df$SDcode3[(df$multi_locus_geno_causal == "210" | df$multi_locus_geno_causal == "201" ) & 
+	df$subpop == "middle" & df$Depth_Cat == "Shallow"] = 10
+	df$SDcode3[(df$multi_locus_geno_causal == "210" | df$multi_locus_geno_causal == "201" ) & 
+	df$subpop == "middle" & df$Depth_Cat == "Intermediate"] = 11
+	df$SDcode3[(df$multi_locus_geno_causal == "210" | df$multi_locus_geno_causal == "201" ) & 
+	df$subpop == "middle" & df$Depth_Cat == "Deep"] = 12
+	df$SDcode3[df$multi_locus_geno_causal == "300" & df$subpop == "benthic" & 
+	df$Depth_Cat == "Intermediate"] = 13
+	df$SDcode3[df$multi_locus_geno_causal == "300" & df$subpop == "benthic" & 
+	df$Depth_Cat == "Deep"] = 14
+	
+	df = df[-which(is.na(df$SDcode3)),]
+
+	fillcol = c(rep(c("grey100","lightblue1","lightblue4"),4),"lightblue1","lightblue4")
+	sd.names=c(rep(c(rep("300",3), rep(paste("210","201",sep="\n"),3)),2),"300","300")
+	barpos=c(1,2,3,4,5,6,8,9,10,11,12,13,15,16)
+
+	par(mar=c(7,6,4,4), mgp=c(4,1,0))
+	
+	boxplot(SL ~ as.factor(SDcode3), outline=FALSE, xlab=NULL, 
+	ylab="Standard length (mm)", main=plot.title, names=rep("",14), ylim=c(50,135), col=fillcol, 
+	at=barpos, lwd=2.5, cex.axis=2, cex.lab=2, data=df)
+	
+	mtext(sd.names,1, at=barpos, padj=1, cex=1.4)
+	mtext("Sex system",1, at=9, padj=4, cex=2)
+
+	pointcol = rep(NA,nrow(df))
+	pointcol[df$multi_locus_geno_causal == "300"] = "steelblue2"
+	pointcol[df$multi_locus_geno_causal == "210"] = "maroon"
+	pointcol[df$multi_locus_geno_causal == "201"] = "gold3"
+	treat = levels(as.factor(df$SDcode3))
+	j = 1
+	for (i in treat) {
+		idx = which(as.character(df$SDcode3) == i)
+		xjitter = jitter(rep(barpos[j],length(idx)), amount=0.2)
+		points(SL ~ xjitter, ylim=c(50,125), col="grey60", pch=1, cex=1.4, data=df[idx,])
+		points(SL ~ xjitter, ylim=c(50,125), col=alpha(pointcol[idx], 0.6), pch=16, 
+		cex=1.4, data=df[idx,])
+		j = j+1
+	}
+}
+
+#jitterbox_catchdepth2(df=onesexm, outfile='SL_by_SD_catch_depth_boxplot_v2.pdf')
+jitterbox_catchdepth2(df=onesexm)
+
+# test for 3-way interaction between admixture fraction (low PC1, middle PC1), 
+# sex determination system (300, 210+201) and catch depth (shallow, intermediate, deep)
+
+dfsub <- dat[which(dat$Sex == "Male" & (dat$subpop == "littoral" | dat$subpop == "middle")),]
+dfsub$SD[which(dfsub$multi_locus_geno_causal == "300")] = "gsdf_dup"
+dfsub$SD[which(dfsub$multi_locus_geno_causal == "210" | dfsub$multi_locus_geno_causal == "201")] = 
+"other_Y"
+dfsub$SD <- factor(dfsub$SD)
+
+depthmod.full <- lm(SL~subpop*SD*Depth_Cat, data=dfsub)
+anova(update(depthmod.full,. ~ . -subpop:SD:Depth_Cat),depthmod.full)
+
+## Log-linear analysis of male frequencies according to sex system, PC1 class, and depth
+
+n.shallow.littoral.300 = length(which(onesexm.noben2$Depth_Cat == "Shallow" & 
+onesexm.noben2$subpop == "littoral" & onesexm.noben2$multi_locus_geno_causal == "300"))
+
+n.shallow.littoral.210.201 = length(which(onesexm.noben2$Depth_Cat == "Shallow" & 
+onesexm.noben2$subpop == "littoral" & (onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+
+n.shallow.middle.300 = length(which(onesexm.noben2$Depth_Cat == "Shallow" & 
+onesexm.noben2$subpop == "middle" & onesexm.noben2$multi_locus_geno_causal == "300"))
+
+n.shallow.middle.210.201 = length(which(onesexm.noben2$Depth_Cat == "Shallow" & 
+onesexm.noben2$subpop == "middle" & (onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+
+n.int.littoral.300 = length(which(onesexm.noben2$Depth_Cat == "Intermediate" & 
+onesexm.noben2$subpop == "littoral" & onesexm.noben2$multi_locus_geno_causal == "300"))
+
+n.int.littoral.210.201 = length(which(onesexm.noben2$Depth_Cat == "Intermediate" & 
+onesexm.noben2$subpop == "littoral" & (onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+
+n.int.middle.300 = length(which(onesexm.noben2$Depth_Cat == "Intermediate" & 
+onesexm.noben2$subpop == "middle" & onesexm.noben2$multi_locus_geno_causal == "300"))
+
+n.int.middle.210.201 = length(which(onesexm.noben2$Depth_Cat == "Intermediate" & 
+onesexm.noben2$subpop == "middle" & (onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+
+n.deep.littoral.300 = length(which(onesexm.noben2$Depth_Cat == "Deep" & 
+onesexm.noben2$subpop == "littoral" & onesexm.noben2$multi_locus_geno_causal == "300"))
+
+n.deep.littoral.210.201 = length(which(onesexm.noben2$Depth_Cat == "Deep" & 
+onesexm.noben2$subpop == "littoral" & (onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+
+n.deep.middle.300 = length(which(onesexm.noben2$Depth_Cat == "Deep" & 
+onesexm.noben2$subpop == "middle" & onesexm.noben2$multi_locus_geno_causal == "300"))
+
+n.deep.middle.210.201 = length(which(onesexm.noben2$Depth_Cat == "Deep" & 
+onesexm.noben2$subpop == "middle" & (onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+
+sdarr <- array(data=c(n.shallow.littoral.300, n.shallow.littoral.210.201, n.shallow.middle.300, 
+n.shallow.middle.210.201, n.int.littoral.300, n.int.littoral.210.201, n.int.middle.300, 
+n.int.middle.210.201, n.deep.littoral.300, n.deep.littoral.210.201, n.deep.middle.300, 
+n.deep.middle.210.201), dim=c(2,2,3), dimnames=list("SD" = c("300", "210_201"), "PC1" = c("low", 
+"middle"), "Depth" = c("shallow", "intermediate", "deep")))
+
+#addmargins(sdarr)
+
+# examine data in terms of proportions
+prop.table(sdarr, margin=c(1,3))
+prop.table(sdarr, margin=c(2,3))
+
+sd.df <- as.data.frame(as.table(sdarr))
+
+# independence model (main effects only)
+sd.mod0 <- glm(Freq ~ SD + PC1 + Depth, data = sd.df, family = poisson)
+summary(sd.mod0)
+
+# check residual deviance to determine if sd.mod0 fits the expected contigency table frequencies
+# well
+pchisq(deviance(sd.mod0), df=df.residual(sd.mod0), lower.tail=FALSE) # 7 degrees of freedom
+# p = 2.077828e-18 <== the expected frequencies in the contingency table deviate more than we 
+# would expect under this model
+
+# fit a saturated model to test for homogeneity in pairwise interactions across levels of the 
+# third variable (all main effects, 2-way, and 3-way interactions)
+sd.mod.full <- glm(Freq ~ SD * PC1 * Depth, data=sd.df, family=poisson)
+summary(sd.mod.full)
+# no significant three-way interaction, e.g. the interaction between SD and PC1 
+# does not depend on depth
+# SD210_201:PC1middle:Depthintermediate (p = 0.9357)
+# SD210_201:PC1middle:Depthdeep (p = 0.7763)
+
+# This suggests a homogeneous interaction model (as it appears that ancestry and depth 
+# significantly interact)
+# test for model of association between all pairs of variables that remain stable across the 
+# third + main effects
+sd.mod1 <- glm(Freq ~ (SD + PC1 + Depth)^2, data=sd.df, family=poisson)
+pchisq(deviance(sd.mod1), df=df.residual(sd.mod1), lower.tail=FALSE) # 2 degrees of freedom
+# p = 0.9601732 <== model is a good fit, i.e. the expected frequencies in the contigency table 
+# do not deviate more than expected under chance given this model
+
+# Ensure that the three-way interaction does not supply significant explanatory power 
+# using a likelihood ratio test
+anova(sd.mod1, sd.mod.full)
+pchisq(0.081283, df=2, lower.tail=FALSE) # p-value = 0.9601733
+# The saturated model does not provide a better fit than this reduced model
+
+# The interaction between depth and PC1 is significant in the homogeneous association model,
+# however it seems that the SD:PC1 and SD:Depth interactions are not significant. Let's fit 
+# two conditional indepedence models removing the non-significant two-way interactions 
+# respectively and see if this causes a significantly worse fit.
+
+# remove SD:Depth interaction
+sd.mod2 <- glm(Freq ~ (SD * PC1) + (PC1 * Depth), data=sd.df, family=poisson)
+pchisq(deviance(sd.mod2),df=df.residual(sd.mod2), lower.tail=FALSE) # 4 degrees of freedom
+# p = 0.4375573 <== fit to the data is good
+anova(sd.mod2, sd.mod1)
+pchisq(3.692, df=2, lower.tail=FALSE) 
+# p = 0.1578674 <== the additional explanatory power of SD:Depth information is not significant
+
+# remove SD:PC1 interaction 
+sd.mod3 <- glm(Freq ~ (SD * Depth) + (PC1 * Depth), data=sd.df, family=poisson)
+pchisq(deviance(sd.mod3),df=df.residual(sd.mod3), lower.tail=FALSE) # 3 degrees of freedom
+# p = 0.8471829 <== fit to the data is good
+anova(sd.mod3,sd.mod1)
+pchisq(0.72826, df=1, lower.tail=FALSE) 
+# p = 0.3934478 <== the additional explanatory power of SD:PC1 information is not significant
+
+# remove both SD:Depth and SD:PC1 interactions. In this model the frequency of being found at a 
+# specific depth and having a certain SD system are independent when controlling for PC1, while 
+# SD and PC1 are independent of each other when controlling for depth.
+sd.mod4 <- glm(Freq ~ SD + (PC1 * Depth), data=sd.df, family=poisson)
+pchisq(deviance(sd.mod4),df=df.residual(sd.mod4), lower.tail=FALSE) # 5 degrees of freedom
+# p = 0.5588149 <== predicted frequencies under this model do not deviate significantly from full model, so it is a good fit to the data
+anova(sd.mod4,sd.mod1)
+pchisq(3.8537, df=3, lower.tail=FALSE) 
+# p = 0.2777014 <== additional explanatory power from SD:PC1 and SD:Depth is not significant
+
+# test whether model including interaction between PC1 and Depth fits better than just main effects
+anova(sd.mod0,sd.mod4)
+pchisq(94.686, df=2, lower.tail=FALSE) 
+# p = 2.749137e-21 <== deviance increases substantially without the PC1:Depth interaction
+
+# test how well the reduced model with only main effects + PC1:Depth fit the data by comparing 
+# deviance to the saturated model
+anova(sd.mod4, sd.mod.full)
+pchisq(3.935, df=5, lower.tail=FALSE) 
+# p = 0.5588119 <=== deviance is not significantly more than saturated model indicating a good fit
+
+# The best model (most simple with high predictive power) appears to be the one with main effects 
+# and an interaction between PC1 and Depth (sd.mod4). The interaction between sex determination 
+# system and ancestry background or depth does not appear to be important for predicting the 
+# frequency of males characterized by a particular SD, ancestry, or catch depth.
+
+## visualize male frequencies according to Y allele, genomic background, and catch depth (Figure S7a)
+
+# contigency table of SD genotypes and catch depth
+
+n.deep.300 <- length(which(onesexm.noben2$Depth_Cat == "Deep" & 
+onesexm.noben2$multi_locus_geno_causal == "300"))
+n.deep.210.201 <- length(which(onesexm.noben2$Depth_Cat == "Deep" & 
+(onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+n.int.300 <- length(which(onesexm.noben2$Depth_Cat == "Intermediate" & 
+onesexm.noben2$multi_locus_geno_causal == "300"))
+n.int.210.201 <- length(which(onesexm.noben2$Depth_Cat == "Intermediate" & 
+(onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+n.shallow.300 <- length(which(onesexm.noben2$Depth_Cat == "Shallow" & 
+onesexm.noben2$multi_locus_geno_causal == "300"))
+n.shallow.210.201 <- length(which(onesexm.noben2$Depth_Cat == "Shallow" & 
+(onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+sd.depth <- data.frame(shallow = c(n.shallow.300, n.shallow.210.201), 
+intermediate = c(n.int.300, n.int.210.201), deep = c(n.deep.300, n.deep.210.201))
+rownames(sd.depth) = c("300","210_201")
+
+# contigency table of SD genotypes and littoral PC1 class
+
+n.littoral.300 <- length(which(onesexm.noben2$subpop == "littoral" & 
+onesexm.noben2$multi_locus_geno_causal == "300"))
+n.littoral.210.201 <- length(which(onesexm.noben2$subpop == "littoral" & 
+(onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+n.middle.300 <- length(which(onesexm.noben2$subpop == "middle" & 
+onesexm.noben2$multi_locus_geno_causal == "300"))
+n.middle.210.201 <- length(which(onesexm.noben2$subpop == "middle" & 
+(onesexm.noben2$multi_locus_geno_causal == "210" | 
+onesexm.noben2$multi_locus_geno_causal == "201")))
+sd.subpop <- data.frame(littoral = c(n.littoral.300, n.littoral.210.201), 
+middle = c(n.middle.300, n.middle.210.201))
+rownames(sd.subpop) = c("300","210_201")
+
+n.shallow = sum(sd.depth$shallow)
+n.int = sum(sd.depth$intermediate)
+n.deep = sum(sd.depth$deep)
+
+f.shallow.littoral.300 = n.shallow.littoral.300/n.shallow
+f.shallow.littoral.210.201 = n.shallow.littoral.210.201/n.shallow
+f.shallow.middle.300 = n.shallow.middle.300/n.shallow
+f.shallow.middle.210.201 = n.shallow.middle.210.201/n.shallow
+f.int.littoral.300 = n.int.littoral.300/n.int
+f.int.littoral.210.201 = n.int.littoral.210.201/n.int
+f.int.middle.300 = n.int.middle.300/n.int
+f.int.middle.210.201 = n.int.middle.210.201/n.int
+f.deep.littoral.300 = n.deep.littoral.300/n.deep
+f.deep.littoral.210.201 = n.deep.littoral.210.201/n.deep
+f.deep.middle.300 = n.deep.middle.300/n.deep
+f.deep.middle.210.201 = n.deep.middle.210.201/n.deep
+
+depth.df.pattern <- data.frame(depth = c(rep("shallow",4), rep("intermediate", 4), 
+rep("deep",4)), proportion = c(f.shallow.littoral.300, f.shallow.middle.300, 
+f.shallow.littoral.210.201, f.shallow.middle.210.201, f.int.littoral.300, f.int.middle.300, 
+f.int.littoral.210.201, f.int.middle.210.201, f.deep.littoral.300, f.deep.middle.300, 
+f.deep.littoral.210.201, f.deep.middle.210.201), PC1=rep(c("littoral","middle"),6), 
+SD=rep(c("300","300","210_201","210_201"),3))
+
+depth.df.pattern$depth <- factor(depth.df.pattern$depth,levels = 
+c("shallow","intermediate","deep"),ordered=TRUE)
+depth.df.pattern$gentype = paste0(depth.df.pattern$PC1,"_",depth.df.pattern$SD)
+depth.df.pattern$gentype <- factor(depth.df.pattern$gentype,levels=c("littoral_300", 
+'littoral_210_201', "middle_300", 'middle_210_201'),ordered=TRUE)
+
+col1 = 'steelblue2'
+col2 = 'tomato3'
+backcol = 'black'
+axis_text_size=20
+
+#pdf(file='proportion_sd_by_depth_pc1.pdf')
+x11()
+
+ggplot(depth.df.pattern, aes(fill=gentype, y=proportion, x=depth)) + scale_fill_manual(values = 
+rep(c(backcol,backcol,col1,col2),3)) + geom_bar_pattern(position="stack", stat="identity", 
+pattern=rep(c('crosshatch','none'),6), pattern_color=rep(c(col1,col1,col2,col2),3), pattern_fill = 
+rep(c(col1,col1,col2,col2),3), pattern_density=0.1, colour="black", size=1) + theme_classic() + 
+theme(legend.position="none", axis.text.x = element_text(size=axis_text_size, color="black"), 
+axis.text.y = element_text(size=axis_text_size, color="black"), axis.title.x=element_text(size = 
+axis_text_size, color="black"), axis.title.y=element_text(size=axis_text_size, color="black")) + 
+xlab("Depth") + ylab("Proportion of littoral males")
+
+#dev.off()
+
+## PCA colored by sex determination system (Figure 3a)
+
+pca_sex <- function(df=NULL, outfile=NULL) {
+
+	if (is.null(df)) stop("No data.frame supplied to pca_sex()")
+	if (!is.null(outfile)) pdf(file=outfile, width=11, height=11) else x11(width=11, height=11)
+
+	dat2 = df[-which(sapply(df$multi_locus_geno_causal,function(x){length(grep("N",x))}) == 
+	1),] # omit individuals with a missing genotype at any locus (removes 2 individuals)
+
+	dat2$multi_locus_geno_causal = as.factor(dat2$multi_locus_geno_causal)
+
+	dat2$pca.col = NA
+	dat2$pca.col[which(dat2$multi_locus_geno_causal == "300" | dat2$multi_locus_geno_causal == 
+	"400")] = "steelblue2" # possess gsdf duplication Y (het or homo)
+	dat2$pca.col[which(dat2$multi_locus_geno_causal == "210" | dat2$multi_locus_geno_causal == 
+	"220")] = "maroon" # possess chr19 Y (het or homo)
+	dat2$pca.col[which(dat2$multi_locus_geno_causal == "201" | dat2$multi_locus_geno_causal == 
+	"202")] = "gold3" # possess secondary gsdf Y (het or homo)
+	dat2$pca.col[which(dat2$multi_locus_geno == "200")] = "white" # no known Y alleles
+	dat2$pca.col[which(is.na(dat2$pca.col) == TRUE)] = "black" # >1 Y allele
+	dat2$coloutline = replace(dat2$pca.col,which(dat2$pca.col == "white"),"black")
+
+	dat2$pca.pnt = NA
+	dat2$pca.pnt[which(dat2$Sex == "Male")] = 16
+	dat2$pca.pnt[which(dat2$Sex == "Female")] = 17
+	dat2$pntoutline = replace(dat2$pca.pnt, which(dat2$pca.pnt == 16), 1)
+	dat2$pntoutline = replace(dat2$pntoutline, which(dat2$pntoutline == 17), 2)
+
+	bencutoff = 0.04
+	litcutoff = -0.02
+
+	par(mar=c(7,7,5,5), mgp=c(4.5,1.8,0))
+	
+	plot(PC2 ~ PC1, xlab = "PC1 (2.16%)", ylab = "PC2 (0.33%)", col=alpha(coloutline, 0.8), 
+	pch=pntoutline, cex=2, data=dat2[-which(dat2$pca.col == "white"),], cex.axis=2.8, cex.lab=3)
+	points(PC2 ~ PC1, pch=pntoutline, col=alpha(coloutline,0.8), data=dat2[which(dat2$pca.col == 
+	"white"),], cex=2) # add white outlines separate so they show up better
+	points(PC2 ~ PC1, col=alpha(pca.col, 0.6), pch=pca.pnt, cex=2, data=dat2)
+	abline(v=litcutoff, lty=2, lwd=1.8, col="grey50")
+	abline(v=bencutoff, lty=2, lwd=1.8, col="grey50")
+}
+
+#pca_sex(df=dat, outfile='masoko_sex_pca_v2.pdf')
+#dev.off()
+pca_sex(df=dat)
+
+## PCA colored by catch depth (Figure S4)
+
+pca_catchdepth <- function(df, plot.title="PCA catch depth", outfile=NULL) {
+
+	if (is.null(df)) stop("No data.frame supplied to pca_catchdepth()")
+	if (!is.null(outfile)) pdf(file=outfile, width=11, height=11) else x11(width=11, height=11)
+
+	bencutoff = 0.04
+	litcutoff = -0.02
+
+	pointcol = rep(NA,nrow(df))
+	pointcol[df$Depth_Cat == "Shallow"] = "plum1"
+	pointcol[df$Depth_Cat == "Intermediate"] = "purple1"
+	pointcol[df$Depth_Cat == "Deep"] = "midnightblue"
+	pointcol[is.na(df$Depth_Cat)] = "white"
+	pointcol_outline = replace(pointcol,which(pointcol == "white"), "black")
+	pointcol_outline = replace(pointcol_outline,which(pointcol_outline == "plum1"), "plum3")
+
+	pointtype1 = rep(NA,nrow(df))
+	pointtype1[df$Sex == "Male"] = 1
+	pointtype1[df$Sex == "Female"] = 2
+	pointtype2 = rep(NA,nrow(df))
+	pointtype2[df$Sex == "Male"] = 16
+	pointtype2[df$Sex == "Female"] = 17
+	
+	pointincr = 2
+
+	par(mar=c(7,7,5,5), mgp=c(4.5,1.8,0))
+	
+	plot(PC2 ~ PC1, xlab= "PC1 (2.16%)", ylab="PC2 (0.33%)", main=plot.title, pch=pointtype1, 
+	col=alpha(pointcol_outline, 0.8), cex=pointincr, cex.axis=2.3, cex.lab=2.3, data=df)
+	points(PC2 ~ PC1, pch=pointtype2, col=alpha(pointcol,0.6), cex=pointincr, data=df)
+	abline(v=litcutoff, lty=2, lwd=1.8, col="grey50")
+	abline(v=bencutoff, lty=2, lwd=1.8, col="grey50")
+}
+
+#pca_catchdepth(df=dat, outfile='catch_depth_PCA_v2.pdf')
+#dev.off()
+pca_catchdepth(df=dat)
+
+## Correlation between admixture proportion and PC1 (Figure S5b)
+
+modfit.ancestry <- lm(PC1 ~ benthic_ancestry_q, data=dat)
+modfit.ancestry.sum <- summary(modfit.ancestry)
+
+# plot correlation
+
+#pdf(file='PC1_vs_admixture.pdf', width=8, height=8)
+x11(width=8,height=8)
+par(mar=c(4.5,4.5,4.5,4.5))
+
+plot(dat$PC1 ~ dat$benthic_ancestry_q, xlab="Benthic ancestry proportion", ylab="Genetic PC1", 
+main = "", cex=1.4, cex.lab=1.7, cex.axis=1.7)
+
+abline(coefficients(modfit.ancestry)[1], coefficients(modfit.ancestry)[2], col="red",lwd=1.3)
+abline(h=-0.02, lty=2, lwd=1.8, col="grey50") # low PC1 cutoff
+abline(h=0.04, lty=2, lwd=1.8, col="grey50") # middle PC1 cutoff
+text(x=0.8,y=0.06,substitute(paste(R^2," = ",rsq),list(rsq=round(modfit.ancestry.sum$r.squared,
+digits=3))),cex=1.7)
+text(x=0.15,y=0.06,"High PC1", cex=1.7)
+text(x=0.8,y=-0.01,"Middle PC1", cex=1.7)
+text(x=0.8,y=-0.05,"Low PC1", cex=1.7)
+#dev.off()
+
+## Visualize admixture proportions (Figure S5a)
+
+# admixture barplot
+
+q2.sort <- dat[order(dat$PC1),]
+n1 = which(q2.sort$PC1>-0.02)[1]-1 # demarcation of low PC1 individuals
+n2 = tail(which(q2.sort$PC1<0.04),n=1) # demarcation of middle PC1 individuals
+png(file='Masoko_Admixture_K2_noline.png',width=2000,height=500)
+#png(file='Masoko_Admixture_K2.png',width=2000,height=500)
+par(mar=c(4,4.5,4,2))
+barplot(t(as.matrix(q2.sort[,c(which(colnames(q2.sort) == "littoral_ancestry_q"),
+which(colnames(q2.sort) == "benthic_ancestry_q"))])), col=c("gold","blue"), space=0, 
+cex.axis=4, ylab="", cex.lab=1.8, xlab="", names.arg=rep(NA,nrow(q2.sort)), yaxt='n')
+axis(side=2, lwd=4, cex.axis=4)
+#abline(v=n1,col="red")
+#abline(v=n2,col="red")
+dev.off()
+
+## gsdf expression comparison in the liver between different types of males (Figure 2b)
+
+liversub = dat[!is.na(dat$gsdf_cpm_liver),]
+liversub$sdcode = NA
+liversub$sdcode[liversub$multi_locus_geno_causal == "210"] = 1
+liversub$sdcode[liversub$multi_locus_geno_causal == "201"] = 2
+liversub$sdcode[liversub$multi_locus_geno_causal == "300"] = 3
+liversub$sdcode[liversub$multi_locus_geno_causal == "400"] = 4
+liversub$sdcode = factor(liversub$sdcode)
+
+#pdf(file='liver_gsdf_expression.pdf')
+x11()
+
+boxplot(liversub$gsdf_cpm_liver ~ liversub$sdcode, outline=FALSE, names=c("","","",""), xlab="", 
+ylab="Liver gsdf expression (CPM)", main="", col="gray80", cex.axis=1.5, cex.lab=1.5,lwd=2)
+
+mtext(c("2","2","3","4"), 1, at=c(1,2,3,4), padj=1, cex=1.5)
+axis(3,at=c(1,2,3,4), tick=TRUE, labels=FALSE)
+mtext(c(paste("chr19","ins",sep="\n"),paste("chr7","ins",sep="\n"), paste("gsdf","dup",sep="\n"),
+paste("gsdf","dup",sep="\n")), 3, at=c(1,2,3,4), padj=-0.3, cex=1.5)
+mtext("gsdf copies",1, at=2.5, padj=4, cex=1.5)
+
+sdlevels = levels(liversub$sdcode)
+for (i in sdlevels) {
+	idx = which(as.character(liversub$sdcode) == i)
+	xjitter = jitter(rep(which(sdlevels == i),length(idx)), amount=0.2)
+	points(gsdf_cpm_liver[idx] ~ xjitter, pch=1, cex=1.2, data=liversub)
+	points(gsdf_cpm_liver[idx] ~ xjitter, pch=16, cex=1.2, col=alpha("maroon",0.6), 
+	data=liversub)
+}
+
+#dev.off()
+
+## id3 expression comparison in the liver between different types of males
+
+x11()
+par(mar=c(5,5,6,5))
+boxplot(liversub$id3_cpm_liver ~ liversub$sdcode, outline=FALSE, names=c("","","",""), xlab="", 
+ylab="Liver id3 expression (CPM)", main="", col="gray80", cex.axis=1.5, cex.lab=1.5,lwd=2,
+ylim=c(0,200))
+
+mtext(c("2","2","3","4"), 1, at=c(1,2,3,4), padj=1, cex=1.5)
+axis(3,at=c(1,2,3,4), tick=TRUE, labels=FALSE)
+mtext(c(paste("chr19","ins",sep="\n"),paste("chr7","ins",sep="\n"),paste("gsdf","dup",sep="\n"),
+paste("gsdf","dup",sep="\n")), 3, at=c(1,2,3,4), padj=-0.4, cex=1.5)
+
+mtext("gsdf copies",1, at=2.5, padj=4, cex=1.5)
+sdlevels = levels(liversub$sdcode)
+for (i in sdlevels) {
+	idx = which(as.character(liversub$sdcode) == i)
+	xjitter = jitter(rep(which(sdlevels == i),length(idx)), amount=0.2)
+	points(id3_cpm_liver[idx] ~ xjitter, pch=1, cex=1.2, data=liversub)
+	points(id3_cpm_liver[idx] ~ xjitter, pch=16, cex=1.2, col=alpha("maroon",0.6), 
+	data=liversub)
+}
+
+## gsdf expression in the eyes, anal fins, and gills between different types of males (Figure S3)
+
+#png('three_tissue_gsdf_expression.png', width=1200,height=400)
+x11()
+par(mfrow=c(1,3))
+
+# eye
+
+eyesub = dat[!is.na(dat$gsdf_cpm_eye),]
+eyesub$sdcode = NA
+eyesub$sdcode[eyesub$multi_locus_geno_causal == "210"] = 1
+eyesub$sdcode[eyesub$multi_locus_geno_causal == "201"] = 2
+eyesub$sdcode[eyesub$multi_locus_geno_causal == "300"] = 3
+eyesub$sdcode[eyesub$multi_locus_geno_causal == "400"] = 4
+eyesub$sdcode = factor(eyesub$sdcode)
+
+par(mar=c(5,5,6,5))
+
+boxplot(eyesub$gsdf_cpm_eye ~ eyesub$sdcode, outline=FALSE, names=c("","","",""), xlab="", 
+ylab="Eye gsdf expression (CPM)", main="", col="gray80", cex.axis=2.3, cex.lab=1.5,lwd=2)
+
+mtext(c("2","2","3","4"), 1, at=c(1,2,3,4), padj=1, cex=1.5)
+axis(3,at=c(1,2,3,4), tick=TRUE, labels=FALSE)
+mtext(c(paste("chr19","ins",sep="\n"),paste("chr7","ins",sep="\n"),paste("gsdf","dup",sep="\n"),
+paste("gsdf","dup",sep="\n")), 3, at=c(1,2,3,4), padj=-0.4, cex=1.5)
+mtext("gsdf copies",1, at=2.5, padj=4, cex=1.5)
+
+sdlevels = levels(eyesub$sdcode)
+for (i in sdlevels) {
+	idx = which(as.character(eyesub$sdcode) == i)
+	xjitter = jitter(rep(which(sdlevels == i),length(idx)), amount=0.2)
+	points(gsdf_cpm_eye[idx] ~ xjitter, pch=1, cex=1.2, data=eyesub)
+	points(gsdf_cpm_eye[idx] ~ xjitter, pch=16, cex=1.2, col=alpha("maroon",0.6), data=eyesub)
+
+}
+
+# anal fin
+
+finsub = dat[!is.na(dat$gsdf_cpm_analfin),]
+finsub$sdcode[finsub$multi_locus_geno_causal == "210"] = 1
+finsub$sdcode[finsub$multi_locus_geno_causal == "201"] = 2
+finsub$sdcode[finsub$multi_locus_geno_causal == "300"] = 3
+finsub$sdcode[finsub$multi_locus_geno_causal == "400"] = 4
+finsub$sdcode = factor(finsub$sdcode)
+
+par(mar=c(5,5,6,5))
+
+boxplot(finsub$gsdf_cpm_analfin ~ finsub$sdcode, outline=FALSE, names=c("","","",""), xlab="", 
+ylab="Anal fin gsdf expression (CPM)", main="", col="gray80", cex.axis=2.3, cex.lab=1.5,lwd=2)
+
+mtext(c("2","2","3","4"), 1, at=c(1,2,3,4), padj=1, cex=1.5)
+axis(3,at=c(1,2,3,4), tick=TRUE, labels=FALSE)
+mtext(c(paste("chr19","ins",sep="\n"),paste("chr7","ins",sep="\n"),paste("gsdf","dup",sep="\n"),
+paste("gsdf","dup",sep="\n")), 3, at=c(1,2,3,4), padj=-0.4, cex=1.5)
+mtext("Gsdf copies",1, at=2.5, padj=4, cex=1.5)
+
+sdlevels = levels(finsub$sdcode)
+for (i in sdlevels) {
+	idx = which(as.character(finsub$sdcode) == i)
+	xjitter = jitter(rep(which(sdlevels == i),length(idx)), amount=0.2)
+	points(gsdf_cpm_analfin[idx] ~ xjitter, pch=1, cex=1.2, data=finsub)
+	points(gsdf_cpm_analfin[idx] ~ xjitter, pch=16, cex=1.2, col=alpha("maroon",0.6), 
+	data=finsub)
+
+}
+
+# gill
+
+gillsub = dat[!is.na(dat$gsdf_cpm_gill),]
+gillsub$sdcode[gillsub$multi_locus_geno_causal == "210"] = 1
+gillsub$sdcode[gillsub$multi_locus_geno_causal == "201"] = 2
+gillsub$sdcode[gillsub$multi_locus_geno_causal == "300"] = 3
+gillsub$sdcode[gillsub$multi_locus_geno_causal == "400"] = 4
+gillsub$sdcode = factor(gillsub$sdcode)
+
+par(mar=c(5,5,6,5))
+
+boxplot(gillsub$gsdf_cpm_gill ~ gillsub$sdcode, outline=FALSE, names=c("","","",""), xlab="", 
+ylab="Gill gsdf expression (CPM)", main="", col="gray80", cex.axis=2.3, cex.lab=1.5,lwd=2, 
+ylim=c(0,18))
+
+mtext(c("2","2","3","4"), 1, at=c(1,2,3,4), padj=1, cex=1.5)
+axis(3,at=c(1,2,3,4), tick=TRUE, labels=FALSE)
+mtext(c(paste("chr19","ins",sep="\n"),paste("chr7","ins",sep="\n"),paste("gsdf","dup",sep="\n"),
+paste("gsdf","dup",sep="\n")), 3, at=c(1,2,3,4), padj=-0.4, cex=1.5)
+mtext("Gsdf copies",1, at=2.5, padj=4, cex=1.5)
+
+sdlevels = levels(gillsub$sdcode)
+for (i in sdlevels) {
+	idx = which(as.character(gillsub$sdcode) == i)
+	xjitter = jitter(rep(which(sdlevels == i),length(idx)), amount=0.2)
+	points(gsdf_cpm_gill[idx] ~ xjitter, pch=1, cex=1.2, data=gillsub)
+	points(gsdf_cpm_gill[idx] ~ xjitter, pch=16, cex=1.2, col=alpha("maroon",0.6), data=gillsub)
+
+}
+
+#dev.off()
+
+### End R code that uses data in masoko_master_data.txt ###
+
+############################################################
+### Start R code that uses data in gonad_gsdf_rnaseq.txt ###
+### Includes code for Figure 2a                          ###
+############################################################
+
+# gsdf (ENSACLG00000002883) has five exons (1-based region):
+# chr7 18089544 18089653
+# chr7 18090125 18090282
+# chr7 18090386 18090478
+# chr7 18090568 18090701
+# chr7 18091352 18091501
+
+gsdf.exons <- data.frame(chr=rep('chr7',5), start=c(18089544,18090125,18090386,18090568,18091352),
+end=c(18089653,18090282,18090478,18090701,18091501))
+
+gsdf.exon.length = sum(gsdf.exons$end - gsdf.exons$start) + nrow(gsdf.exons)
+# gsdf total exon length is 0.645 kb
+
+# read in data
+
+gonad.dat <- read.table('gonad_gsdf_rnaseq.txt',head=TRUE)
+# gsdf CPM calculated as: gonad.dat$gsdf_read_total/gonad.dat$Total_Mapped_Reads * 10^6
+# gsdf RPKM calculated as: gonad.dat$gsdf_read_total/(0.645*(gonad.dat$Total_Mapped_Reads/10^6))
+
+# plot
+
+#pdf(file='gsdf_gonad_cpm_expression.pdf',width=10,height=10)
+x11(width=10,height=10)
+barplot(gonad.dat$gsdf_CPM, names.arg=paste(gonad.dat$Seq_ID,gonad.dat$Tissue,sep="\n"), 
+ylab="Gonad gsdf expression (CPM)", cex.axis=2.5, cex.lab=1.5, main="", width=0.6, 
+xlim=c(0,4), cex.names=0.6)
+
+#dev.off()
+
+### End R code that uses data in gonad_gsdf_rnaseq.txt ###
+
+######################################################################
+### Start R code that uses data in masoko_sex_gwas_[123].txt files ###
+### Includes code for Figure 1a                                    ###
+######################################################################
+
+# read in data from the 3 serial GWAS
+
+gwas1 <- read.table('masoko_sex_gwas_1.txt', head=TRUE)
+gwas2 <- read.table('masoko_sex_gwas_2.txt', head=TRUE)
+gwas3 <- read.table('masoko_sex_gwas_3.txt', head=TRUE)
+
+# define the Bonferonni-adjusted p-value cutoff for significant SNPs for each GWAS
+
+gwas1bf = -log10(0.05/nrow(gwas1))
+gwas2bf = -log10(0.05/nrow(gwas2))
+gwas3bf = -log10(0.05/nrow(gwas3))
+
+# find position of most significant SNP from each GWAS
+
+gwas1top.ps = gwas1[which(gwas1$p_lrt == min(gwas1$p_lrt)),1:2]
+gwas2top.ps = gwas2[which(gwas2$p_lrt == min(gwas2$p_lrt)),1:2]
+gwas3top.ps = gwas3[which(gwas3$p_lrt == min(gwas3$p_lrt)),1:2]
+
+# define point colors, indicating chromosomes and most significant regions
+
+distcutoff = 1000000 # define SNPs that are within 1 mb from the top significant
+# SNP as a region for visualization
+
+gwas1$pntcol = NA
+gwas1$pntcol = sapply(gwas1$chr,function(x){if (x > 20) x = x-1; ifelse(x %% 2, 
+"darkslategrey","darkslategray4")})
+gwas1$pntcol[-log10(gwas1$p_lrt) > gwas1bf & gwas1$chr == gwas1top.ps$chr & 
+gwas1$ps > (gwas1top.ps$ps - distcutoff) & gwas1$ps < (gwas1top.ps$ps + distcutoff)] = "maroon"
+
+gwas2$pntcol = NA
+gwas2$pntcol = sapply(gwas2$chr,function(x){if (x > 20) x = x-1; ifelse(x %% 2, 
+"darkslategrey","darkslategray4")})
+gwas2$pntcol[-log10(gwas2$p_lrt) > gwas2bf & gwas2$chr == gwas2top.ps$chr & 
+gwas2$ps > (gwas2top.ps$ps - distcutoff) & gwas2$ps < (gwas2top.ps$ps + distcutoff)] = "maroon"
+# significant SNPs for chr19-ins span 21519289-22036704 (62,616 and 454,799 either side of 
+# the top SNP)
+
+gwas3$pntcol = NA
+gwas3$pntcol = sapply(gwas3$chr,function(x){if (x > 20) x = x-1; ifelse(x %% 2, 
+"darkslategrey","darkslategray4")})
+gwas3$pntcol = gwas3$pntcol
+gwas3$pntcol[-log10(gwas3$p_lrt) > gwas3bf & gwas3$chr == gwas3top.ps$chr & 
+gwas3$ps > (gwas3top.ps$ps - distcutoff) & gwas3$ps < (gwas1top.ps$ps + distcutoff)] = "maroon"
+# significant SNPs for chr7-ins gwas span 16710611-19078476 (1,008,100 and 1,359,765 either 
+# side of the top SNP)
+
+# find position in plot for chr numbers
+
+gwas1mids = sapply(unique(gwas1$chr), function(x,df){min = min(which(df$chr == x))
+round(min + (max(which(df$chr == x)) - min)/2)}, df=gwas1)
+
+gwas2mids = sapply(unique(gwas2$chr), function(x,df){min = min(which(df$chr == x))
+round(min + (max(which(df$chr == x)) - min)/2)}, df=gwas2)
+
+gwas3mids = sapply(unique(gwas3$chr), function(x,df){min = min(which(df$chr == x))
+round(min + (max(which(df$chr == x)) - min)/2)}, df=gwas3)
+
+# plot
+# Note that y-axis is -log10(p-value)
+
+png(file='serial_gwas_manhattan.png',width=1200,height=1000)
+par(mfrow=c(3,1), mar=c(6,6,4,4))
+
+plot(y=-log10(gwas1$p_lrt), x=1:nrow(gwas1), xlab=NA, ylab=NA, main = "All samples", 
+ylim=c(0,25), col=gwas1$pntcol, pch=19, cex=2, cex.axis=4, cex.lab=2, cex.main=2, xaxt='n', bty="n")
+abline(h=gwas1bf, col="gray60")
+
+plot(y=-log10(gwas2$p_lrt), x=1:nrow(gwas2), xlab=NA, ylab=NA, main = "No gsdf-dup males", 
+ylim=c(0,16), col=gwas2$pntcol, pch=19, cex=2, cex.axis=4, cex.lab=2, cex.main=2, xaxt='n', 
+bty="n")
+abline(h=gwas2bf, col="gray60")
+
+plot(y=-log10(gwas3$p_lrt), x=1:nrow(gwas3), xlab=NA, ylab=NA, main = "No gsdf-dup or chr19-ins 
+males", ylim=c(0,12), col=gwas3$pntcol, pch=19, cex=2, cex.axis=4, cex.lab=2, cex.main=2, 
+xaxt='n', bty="n")
+abline(h=gwas3bf, col="gray60")
+mtext(text=as.character(unique(gwas3$chr)), side=1, at=gwas3mids, padj=1, cex=2)
+
+dev.off()
+
+### End R code that uses data in masoko_sex_gwas_[123].txt files ###
+
+############################################################
+### Start R code that uses data from the following files ###
+### 1) normalised_coverage_100bp_XX_XY.txt               ###
+### 2) masoko_sex_gwas_1.txt                             ###
+### 3) chr7_18098212.ld                                  ###
+### 4) fAstCal1.2_chr7_annotations.gtf                   ###
+###                                                      ###
+### Code for Figure 1b                                   ###
+############################################################
+
+## load libraries
+
+library(rtracklayer)
+library(scales) # for alpha colors
+
+## read input data
+
+coverage <- read.table('normalised_coverage_100bp_XX_XY.txt', header = TRUE)
+res <- read.table('masoko_sex_gwas_1.txt', header = TRUE)
+ld <- read.table('chr7_18098212.ld', header = TRUE)
+gtf_ensembl <- rtracklayer::import('fAstCal1.2_chr7_annotations.gtf')
+
+## set argument values
+testcol <- 6 # GWAS input p-value column number
+chrcol <- 1 # GWAS input chromosome number column
+pscol <- 2 # GWAS input position column
+focal_chrom <- 7 #  focal GWAS SNP chromosome
+positions <- c("18098212") # focal GWAS SNPs
+focal_snp <- positions[1] 
+sig_line <- 0.05/1465512 # bonferoni-adjusted significance level for GWAS
+transform <- TRUE # plot log transformed GWAS p-values
+win_start <- 18065000 # Genomic window start position
+win_end <- 18120000 # Genomic window end position
+diam <- 2 # scaling factor for point diameter
+scale <- 1.5 # scaling factor for text elements
+labs <- FALSE # whether or not to plot names of genes 
+highlight_gene <- "ENSACLG00000002883" # coordinates to highlight
+highlight_col <- "#DCDCDC" # color for highlighted regions on plot
+XX_col <- "#009900B4" # XX female line color in coverage plot
+XY_col <- "#B266FFB4" # XY male lie color in coverage plot
+
+##Extract points to plot
+
+# Restrict to single chromosome & sort by position
+res <- res[which(res[,chrcol]==focal_chrom),c(chrcol,pscol,testcol)]
+res <- res[order(res[,2]),]
+
+# Check if focal_snp is present in GWAS data
+if( !(focal_snp %in% res[,2]) ){
+  stop("Focal SNP is not present in input data")
+} 
+
+# Check if focal_snp is present in LD data 
+if( !(focal_snp %in% ld$BP_B) ){
+  stop("Focal SNP is not present in VCF")
+}
+
+# Match SNPs from two input files, combine and subset to window
+res <- res[which(res[,2] %in% ld$BP_B),]
+ld <- ld[which(ld$BP_B %in% res[,2]),]
+points.df <- cbind(res, ld$R2)
+points.df <- points.df[which((points.df[,2] >= win_start) & (points.df[,2] <= win_end)),]
+
+# Specify point colours based on LD with focal SNP 
+rbPal <- colorRampPalette(c("darkblue","aquamarine","lawngreen","yellow","orange","red"))
+points.df$colour <- rbPal(10)[as.numeric(cut(points.df$`ld$R2`, breaks = 10))]
+fs <- which(points.df[,2] == focal_snp)
+points.df[fs,"colour"] <- "maroon"
+
+# Convert gtf to data.frame 
+gtf_ensembl_df <- as.data.frame(gtf_ensembl)
+
+# Subset to chromosome & region of interest 
+gtf_subset_df <- gtf_ensembl_df[which(gtf_ensembl_df$seqnames == focal_chrom),]
+gtf_subset_df <- gtf_subset_df[which((gtf_subset_df$start >= win_start & gtf_subset_df$start <= win_end) | (gtf_subset_df$end >= win_start & gtf_subset_df$end <= win_end)),]
+
+# Get list of genes in region
+subset_genes <- gtf_subset_df[which(gtf_subset_df$type == "gene"),c("gene_id","start","end")]
+
+# Calculate gene levels
+margin <- 1000
+subset_genes$level <- c()
+subset_genes$t_start <- c()
+subset_genes$t_end <- c()
+gtf_subset_df$level <- c()
+for (i in 1:length(subset_genes$gene_id)){
+   # calculate extent of transcripts 
+   subset_genes[i,"t_start"] <- min(gtf_subset_df[which((gtf_subset_df$gene_id == subset_genes[i,"gene_id"]) & (gtf_subset_df$type == "transcript")),"start"])
+   subset_genes[i,"t_end"] <- max(gtf_subset_df[which((gtf_subset_df$gene_id == subset_genes[i,"gene_id"]) & (gtf_subset_df$type == "transcript")),"end"])
+   if(i == 1){
+      subset_genes[i,"level"] <- 1
+   }else{
+      if(subset_genes[i,"t_start"] <= (subset_genes[(i-1),"t_end"]+margin)){
+         subset_genes[i,"level"] <- subset_genes[(i-1),"level"] + 1
+         if(subset_genes[i,"level"] >= 3){
+            last_entry_n_2 <- max(which(subset_genes$level == (subset_genes[i,"level"]-2)))
+            if(subset_genes[i,"t_start"] >= subset_genes[last_entry_n_2,"t_end"]+margin){
+               subset_genes[i,"level"] <- subset_genes[i,"level"] - 2
+            }
+         }
+      }else{
+         subset_genes[i,"level"] <- 1
+      }
+   }
+   gtf_subset_df[which(gtf_subset_df$gene_id == subset_genes[i,"gene_id"]), "level"] <- subset_genes[i,"level"]
+}
+gene.levels <- max(gtf_subset_df$level, na.rm = TRUE)
+
+# Set co-ordinates to highlight
+highlight <- c()
+if(!is.na(highlight_gene)){
+  highlight[1] <- as.numeric(subset_genes[which(subset_genes$gene_id==highlight_gene),"start"])
+  highlight[2] <- as.numeric(subset_genes[which(subset_genes$gene_id==highlight_gene),"end"])
+}
+
+## Function to plot coverage panel
+
+plot_coverage <- function(coverage,highlight, ...){
+   plot(coverage$Bin, coverage$XX_norm_mean, pch=NA, ylim=c(0.5,2), ylab="", xlab="", xaxt='n', cex.axis=3, cex.lab=scale*1.2, ...)
+   if(length(highlight) == 2){
+      rect(xleft = highlight[1], xright = highlight[2], ybottom=-1, ytop=3, col = highlight_col, border = NA) # plot highlight
+   }
+   lines(coverage$Bin, coverage$XX_norm_mean, col = XX_col, lwd = 5) # XX line
+   lines(coverage$Bin, coverage$XY_norm_mean, col = XY_col, lwd = 5) # XY line
+   legend("topright", 2, legend=c(expression(italic('gsdf')*'-dup XY males'), expression(italic('gsdf')*'-dup XX females')), lwd = 7, 
+   col=c(XY_col,XX_col), lty = 1, cex=scale, bty="n") 
+}
+
+## Function to add SNP position labels - test values subfunction ####
+plot_label <- function(position, pos_yval_colour){
+   row <- which(pos_yval_colour[,1] == position)
+   text(x=pos_yval_colour[row,1], y=(pos_yval_colour[row,2]+0.03*max(pos_yval_colour[,2])), labels=paste0("chr",focal_chrom,":",position), cex = scale, font=2)
+}
+
+## Function to plot test values panel
+plot_test_values <- function(pos_yval_colour, log_transform, sig_threshold, highlight){
+
+   if(log_transform == TRUE){
+   # Test if there are any zero
+      if(pos_yval_colour[fs,2] == 0){
+         stop("Log transforming requested when focal SNP has value zero.")
+      }
+      if(0 %in% pos_yval_colour[,2]){
+         zero_vals <- sum(pos_yval_colour[,2] == 0)
+         print(paste0("Warning: Cannot plot log transform for ",zero_vals," SNP(s) as they have test value zero."))
+         pos_yval_colour <- pos_yval_colour[-c(which(pos_yval_colour[,2] == 0)),]  # remove any rows with test value 0 from data
+      }
+      # Log transform yvals
+      pos_yval_colour[,2] <- -log(pos_yval_colour[,2], base=10)
+      # Log transform significance threshold 
+      sig_threshold <- -log(sig_threshold, base=10)
+      # Set ylims
+      minval <- min(pos_yval_colour[,2])
+      maxval <- max(pos_yval_colour[,2])
+      if(minval >= 0){
+         miny <- 0
+      }else{
+         miny <- minval - 0.02*abs(minval)
+      }
+      if(maxval <= 0){
+         maxy <- 0
+      }else{
+         maxy <- maxval + 0.02*maxval
+      }
+      # Set ylabel 
+      labely <- expression("-log"[10] * "(p)")
+   }else{
+   # For non-log transformed case 
+      # Set ylims based on data spread
+      st <- sd(pos_yval_colour[,2])
+      miny <- min(pos_yval_colour[,2]) - st
+      maxy <- max(pos_yval_colour[,2]) + st
+      # Set ylabel 
+      if(head == TRUE){
+         labely <- colnames(pos_yval_colour[2])
+      }else{
+         labely <- "Test Value"
+      }
+   }
+   # Remove any rows with NA or non-finite values in test column
+   pos_yval_colour <- pos_yval_colour[c(which(is.finite(pos_yval_colour[,2]))),]
+
+   # Plot
+   plot(x=pos_yval_colour[,1], y=pos_yval_colour[,2], pch=21,xlab="", cex=diam, ylab="", cex.axis=3, cex.lab=scale*1.2, xlim=c(win_start,win_end), ylim=c(0,maxy), xaxt='n') # initialise plot
+   if(length(highlight) == 2){
+      rect(xleft = highlight[1], xright = highlight[2], ybottom=-2, ytop=maxy+2, col = highlight_col, border = NA) # plot highlight
+   }
+   points(x=pos_yval_colour[,1], y=pos_yval_colour[,2], pch=21, col="black", bg=pos_yval_colour[,3], lwd=2, cex=diam*1.5) # plot test values 
+   legend("topleft", title=expression("r"^2),legend=c("chr7:18098212",1,0.8,0.6,0.4,0.2,0), pt.bg=c("maroon", rev(rbPal(6))), col="black", pch=21, pt.cex=diam*1.5, bty="n", pt.lwd=2, cex=scale) # plot legend
+   # Add significance threshold to plot if specified
+   if(!is.na(sig_threshold)){
+      abline(h=sig_threshold, col = "darkred", lwd=3) 
+   }
+   abline(v=18086980,col="#DCDCDC",lty=2,lwd=15) # gsdf-ins
+}
+
+## Annotation subfunciton::Function to plot exon
+plot_exon <- function(exon_row, b1, t1){
+  rect(xleft = exon_row["start"], xright = exon_row["end"], ybottom=b1, ytop=t1, col = "red" , border = NA)
+}
+
+# Annotation subfucntion::Function to plot genes
+plot_gene <- function(gene_id, gtf, gene.levels){
+   # subset the gtf to only gene of interest
+   gtf_mygene <- gtf[which(gtf$gene_id == gene_id),]
+   # Assign position based on levels
+   gene_level <- gtf_mygene[1,"level"]
+   level_width <- 1/gene.levels
+   m <- level_width*(gene.levels-gene_level)+0.5*level_width
+   t1 <- m + 0.3*level_width
+   b1 <- m - 0.3*level_width
+   # get label 
+   if(!is.na(gtf_mygene[1,"gene_name"])){
+      lab <- gtf_mygene[1,"gene_name"]
+   } else{
+      lab <- gene_id
+   }
+   if(gtf_mygene[1,"strand"] == "+"){
+      lab <- paste0(lab," >")
+   }else{
+      lab <- paste0("< ",lab)
+   }
+   # subset exons 
+   exons_gtf <- gtf_mygene[which(gtf_mygene$type == "exon"),]
+   # plot exons 
+   invisible(apply(exons_gtf, 1, plot_exon, b1=b1, t1=t1))
+   # plot extent of transcripts
+   segments(x0 = subset_genes[which(subset_genes$gene_id == gene_id), "t_start"], y0 = m, x1 = subset_genes[which(subset_genes$gene_id == gene_id), "t_end"], y1 = m ,col = "red", lty = 1, lwd=3) 
+   # plot 3UTR and 5UTR if present 
+   UTR_3 <- which(gtf_mygene$type == "three_prime_utr")
+   UTR_5 <- which(gtf_mygene$type == "five_prime_utr")
+   if(length(UTR_3) != 0){
+      rect(xleft = gtf_mygene[UTR_3,"start"], xright = gtf_mygene[UTR_3,"end"], ybottom=b1, ytop=t1, col = NA , border = "red", lwd = 0.1)
+   }
+   if(length(UTR_5) != 0){
+      rect(xleft = gtf_mygene[UTR_5,"start"], xright = gtf_mygene[UTR_5,"end"], ybottom=b1, ytop=t1, col = NA , border = "red", lwd = 0.1)
+   }
+   # plot labels 
+   if(labs==TRUE){
+      midpoint = (gtf_mygene[1,"start"]+gtf_mygene[1,"end"])/2
+      text(x=midpoint, y=t1+0.2*level_width, labels=lab, cex = 2*level_width, col = "red", font=2)
+   }
+}
+
+## Function to plot annotations panel
+plot_annotations <- function(gene_id, gtf_subset_df, highlight){
+   plot(0,type='n', axes=FALSE, ann=FALSE, xlim=c(win_start, win_end), ylim=c(0, 1.15), frame.plot= TRUE) # initialise plot window
+   if(length(highlight) == 2){
+      rect(xleft = highlight[1], xright = highlight[2], ybottom=-1, ytop=2, col = highlight_col, border = NA) # plot highlight
+   }
+   axis(1, xpd = TRUE, cex.axis=3, outer=TRUE, padj=0.5) #axis(3, xpd = TRUE, cex.axis=scale)
+   title(ylab="Annotation", cex.lab=scale*1.2)
+   invisible(lapply(gene_id, plot_gene, gtf=gtf_subset_df, gene.levels=gene.levels)) # plot each gene
+   abline(v=18086980,col="#DCDCDC",lty=2,lwd=15) # gsdf-in
+}
+
+## plot
+
+# Set panel heights, adjusted for levels in annotation panel
+annot_h = 0.25+0.75*gene.levels
+total_h = 9+annot_h
+png_h = 210*total_h
+
+# Plot all panels
+png(filename='chr7_zoom_plot_no_insertion.png', width=3000, height=png_h)
+layout(matrix(c(1,0,2,0,3),ncol=1), widths=c(17,17,17,17,17), heights=c(2.5,0.6,6,0.6,annot_h))
+par(mar = c(0,5,0,0), oma = c(5, 3, 2, 2), cex=2.5)
+plot_coverage(coverage, highlight=NULL,xlim=c(win_start, win_end))
+plot_test_values(points.df[,c(2,3,5)], transform, sig_line, highlight=NULL)
+plot_annotations(subset_genes[,"gene_id"], gtf_subset_df, highlight=NULL)
+mtext(text=paste0("Chromosome ",focal_chrom," position"),side=1,line=1,outer=TRUE,cex=2,padj=5)
+invisible(dev.off())
+
+### End code that uses data in normalised_coverage_100bp_XX_XY.txt, masoko_sex_gwas_1.txt ###
+### chr7_18098212.ld, and fAstCal1.2_chr7_annotations.gtf                                 ###
+
+########################################################################
+### Start R code that uses data in Malawi_cichlids_sex_genotypes.txt ###
+### Includes code for Figure 4                                       ###
+########################################################################
+
+## read in data
+
+rad.dat <- read.table('Malawi_cichlids_sex_genotypes.txt',head=TRUE)
+
+## barplots of gsdf-dup usage by Maylandia zebra, callainos, emmiltos, and fainzilberi
+
+# subset data to sexed species of interest
+
+gsdf = rad.dat[which(rad.dat$genus == "Maylandia" & (rad.dat$species == "zebra" | 
+rad.dat$species == "callainos" | rad.dat$species == "emmiltos" | rad.dat$species == "fainzilberi")),]
+gsdf = gsdf[-which(gsdf$species == "zebra" & gsdf$location %in% c("Nkhata_Bay","Chiofu")),] # keep only national park zebra
+gsdf = gsdf[-which(gsdf$species == "emmiltos" & gsdf$sublocation %in% c("Luwino_reef")),] # remove Luwino reef emmiltos
+gsdf = gsdf[which(gsdf$sex %in% c("M","F")),] # only keep clearly sexed individuals
+
+## tabulate counts of different gsdf-type individuals stratified by sex
+
+# zebra counts
+zebra = data.frame(copies=c("2","3","4"), male=rep(NA,3),female=rep(NA,3))
+zebra$male = sapply(zebra$copies,function(x,df){length(which(df$species == "zebra" & df$sex == 
+"M" & df$gsdf_copies == x))}, df=gsdf)
+zebra$female = sapply(zebra$copies,function(x,df){length(which(df$species == "zebra" & df$sex == 
+"F" & df$gsdf_copies == x))}, df=gsdf)
+
+# zebra
+#   copies male female
+# 1      2   10      6
+# 2      3   17      1
+# 3      4    0      0
+
+
+# callainos counts
+cal = data.frame(copies=c("2","3","4"), male=rep(NA,3),female=rep(NA,3))
+cal$male = sapply(cal$copies,function(x,df){length(which(df$species == "callainos" & df$sex == "M" 
+& df$gsdf_copies == x))}, df=gsdf)
+cal$female = sapply(cal$copies,function(x,df){length(which(df$species == "callainos" & df$sex == 
+"F" & df$gsdf_copies == x))}, df=gsdf)
+
+# cal
+#   copies male female
+# 1      2   11     11
+# 2      3    0      0
+# 3      4    0      0
+
+
+# emmiltos counts
+emm = data.frame(copies=c("2","3","4"), male=rep(NA,3),female=rep(NA,3))
+emm$male = sapply(emm$copies,function(x,df){length(which(df$species == "emmiltos" & df$sex == "M" 
+& df$gsdf_copies == x))}, df=gsdf)
+emm$female = sapply(emm$copies,function(x,df){length(which(df$species == "emmiltos" & df$sex == 
+"F" & df$gsdf_copies == x))}, df=gsdf)
+
+# emm
+#   copies male female
+# 1      2    5      0
+# 2      3   16      0
+# 3      4    1      0
+
+
+# fainzilberi counts
+fai = data.frame(copies=c("2","3","4"), male=rep(NA,3),female=rep(NA,3))
+fai$male = sapply(fai$copies,function(x,df){length(which(df$species == "fainzilberi" & df$sex == 
+"M" & df$gsdf_copies == x))}, df=gsdf)
+fai$female = sapply(fai$copies,function(x,df){length(which(df$species == "fainzilberi" & 
+df$sex == "F" & df$gsdf_copies == x))}, df=gsdf)
+
+# fai
+#   copies male female
+# 1      2   38      1
+# 2      3    0      0
+# 3      4    0      0
+
+## barplots of gsdf-dup usage by species and sex
+# color key:
+# males in "maroon"
+# females in "steelblue1"
+
+x11(width=16,height=9)
+rightind=3
+par(mar=c(7,7,5,rightind), mgp=c(4.5,2.2,0),mfrow=c(1,4), bg=NA)
+cexlevel=4.2
+
+# zebra plot
+barplot(t(as.matrix(zebra[,c(2,3)])), beside=TRUE, names.arg=as.character(zebra$copies), 
+col=c("maroon","steelblue1"), xlab="", ylab="", cex.names=cexlevel, cex.axis=cexlevel, 
+main="Maylandia zebra", ylim=c(0,20))
+rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = "grey90")
+barplot(t(as.matrix(zebra[,c(2,3)])), beside=TRUE, names.arg=as.character(zebra$copies), 
+col=c("maroon","steelblue1"), xlab="", ylab="", cex.names=cexlevel, cex.axis=cexlevel, 
+main="Maylandia zebra",add=TRUE)
+
+# callainos plot
+par(mar=c(7,5,5,rightind))
+barplot(t(as.matrix(cal[,c(2,3)])), beside=TRUE, names.arg=as.character(cal$copies), 
+col=c("maroon","steelblue1"), xlab="", ylab="", cex.names=cexlevel, cex.axis=cexlevel, 
+main="Maylandia callainos", ylim=c(0,12))
+rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = "grey90")
+barplot(t(as.matrix(cal[,c(2,3)])), beside=TRUE, names.arg=as.character(cal$copies), 
+col=c("maroon","steelblue1"), xlab="", ylab="", cex.names=cexlevel, cex.axis=cexlevel, 
+main="Maylandia callainos",add=TRUE)
+
+# emmiltos plot
+par(mar=c(7,5,5,rightind))
+barplot(t(as.matrix(emm[,c(2,3)])), beside=TRUE, names.arg=as.character(emm$copies), 
+col=c("maroon","steelblue1"), xlab="", ylab="", cex.names=cexlevel, cex.axis=cexlevel, 
+main="Maylandia emmiltos", ylim=c(0,20))
+rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = "grey90")
+barplot(t(as.matrix(emm[,c(2,3)])), beside=TRUE, names.arg=as.character(emm$copies), 
+col=c("maroon","steelblue1"), xlab="", ylab="", cex.names=cexlevel, cex.axis=cexlevel, 
+main="Maylandia emmiltos",add=TRUE)
+
+# fainzilberi
+par(mar=c(7,5,5,rightind))
+barplot(t(as.matrix(fai[,c(2,3)])), beside=TRUE, names.arg=as.character(fai$copies), 
+col=c("maroon","steelblue1"), xlab="", ylab="", cex.names=cexlevel, cex.axis=cexlevel, 
+main="Maylandia fainzilberi", ylim=c(0,40))
+rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = "grey90")
+barplot(t(as.matrix(fai[,c(2,3)])), beside=TRUE, names.arg=as.character(fai$copies), 
+col=c("maroon","steelblue1"), xlab="", ylab="", cex.names=cexlevel, cex.axis=cexlevel, 
+main="Maylandia fainzilberi",add=TRUE)
+
+dev.copy(png,'gsdf_copyn_hist_4panel.png', width=900, height=550)
+dev.off()
+
+## Y allele pie charts for Astatotilapia calliptera populations (Figure 4a)
+
+# subset data to A. calliptera
+
+astcal = rad.dat[which(rad.dat$species == "calliptera"),]
+
+# define A. calliptera populations
+
+astcal$locgroup = NA
+astcal$locgroup[astcal$location == "Lake_Masoko"] = "masoko"
+astcal$locgroup[astcal$location == "Lake_Kingiri"] = "kingiri"
+astcal$locgroup[astcal$location == "Mbaka_river" | astcal$location == "Kyela"] = "mbaka" # 42A Kyela sample was from the lower Mbaka River 
+astcal$locgroup[astcal$location == "Malombe"] = "malombe"
+astcal$locgroup[astcal$location == "Rovuma_river" | astcal$location == "Kitai_Dam"] = "rovuma" # Kitai Dam is on the Rovuma River
+astcal$locgroup[astcal$location == "Lake_Chilwa"] = "chilwa"
+astcal$locgroup[astcal$location == "North_Rukuru_river"] = "north_rukuru"
+astcal$locgroup[astcal$location == "Songwe_river"] = "songwe"
+astcal$locgroup[astcal$location == "South_Rukuru_river" | astcal$location == 
+"Enukweni"] = "south_rukuru" # Enukweni is South Rukuru River
+astcal$locgroup[astcal$location == "Lake_Chidya"] = "chidya" # Oxbow lake in the floodplain of the lower Rovuma (essentially riverine)
+astcal$locgroup[astcal$location == "Luwawa"] = "luwawa" # Riverine according to Martin Genner's notes
+astcal$locgroup[astcal$location == "Bua_river"] = "bua"
+astcal$locgroup[astcal$location == "Lake_Itamba"] = "itamba"
+astcal$locgroup[astcal$location == "Itupi_river"] = "itupi"
+astcal$locgroup[astcal$location == "Southwest arm" | astcal$location == "Salima" | 
+astcal$location == "Chizumulu island"] = "malawi"
+astcal$locgroup[astcal$location == "Chitimba"] = "chitimba" # Riverine according to Martin Genner's notes
+
+# mask individuals with uncertain sex
+astcal$sex[astcal$sex == "F?"] = NA
+astcal$sex[astcal$sex == "M?"] = NA
+
+# define gsdf-dup genotype based on copy number
+astcal$gsdf_nalt = NA
+astcal$gsdf_nalt[astcal$gsdf_copies == 2] = 0
+astcal$gsdf_nalt[astcal$gsdf_copies == 3] = 1
+astcal$gsdf_nalt[astcal$gsdf_copies == 4] = 2
+
+# define chr19-ins genotype in terms of number of insertion alleles
+astcal$chr19_21572413_ins_nalt = NA
+astcal$chr19_21572413_ins_nalt[astcal$chr19.ins_GT == "0/0"] = 0
+astcal$chr19_21572413_ins_nalt[astcal$chr19.ins_GT == "1/0" | astcal$chr19.ins_GT == "0/1"] = 1
+astcal$chr19_21572413_ins_nalt[astcal$chr19.ins_GT == "1/1"] = 2
+
+# define chr7-ins genotype in terms of number of insertion alleles
+astcal$chr7_18086980_ins_nalt = NA
+astcal$chr7_18086980_ins_nalt[astcal$chr7.ins_GT == "0/0"] = 0
+astcal$chr7_18086980_ins_nalt[astcal$chr7.ins_GT == "1/0" | astcal$chr7.ins_GT == "0/1"] = 1
+astcal$chr7_18086980_ins_nalt[astcal$chr7.ins_GT == "1/1"] = 2
+
+# calculate Y frequencies for the different sexes in each population
+# color key
+# gsdf-dup: steelblue2
+# chr19-ins: maroon
+# chr7-ins: gold2
+# ancestral allele: black
+
+# Masoko allele frequencies. Exclude the single unsexed individual 'cichl187580074' because
+# this is an erroneous sample.
+
+# masoko male allele frequencies
+
+masoko.male <- astcal[which(astcal$locgroup == "masoko" & astcal$sex == "M"),]
+
+masoko.male.counts <- c(sum(masoko.male$gsdf_nalt, na.rm=TRUE), 
+sum(masoko.male$chr7_18086980_ins_nalt, na.rm=TRUE), 
+sum(masoko.male$chr19_21572413_ins_nalt, na.rm=TRUE))
+names(masoko.male.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+masoko.male.freq = masoko.male.counts/c(2*(c(length(which(is.na(masoko.male$gsdf_nalt) 
+!= TRUE)), length(which(is.na(masoko.male$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(masoko.male$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(masoko.male.freq[1],1-masoko.male.freq[1]), labels=c("gsdf-dup","ancestral"),
+col=c("steelblue2","black"))
+
+pie(c(masoko.male.freq[2],1-masoko.male.freq[2]), labels=c("chr7-ins","ancestral"),
+col=c("gold2","black"))
+
+pie(c(masoko.male.freq[3],1-masoko.male.freq[3]), labels=c("chr19-ins","ancestral")
+,col=c("maroon","black"))
+
+# masoko female allele frequencies
+
+masoko.female <- astcal[which(astcal$locgroup == "masoko" & astcal$sex == "F"),]
+
+masoko.female.counts <- c(sum(masoko.female$gsdf_nalt, na.rm=TRUE), 
+sum(masoko.female$chr7_18086980_ins_nalt, na.rm=TRUE), 
+sum(masoko.female$chr19_21572413_ins_nalt, na.rm=TRUE))
+names(masoko.female.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+masoko.female.freq = masoko.female.counts/c(2*(c(length(which(is.na(masoko.female$gsdf_nalt) 
+!= TRUE)), length(which(is.na(masoko.female$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(masoko.female$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(masoko.female.freq[1],1-masoko.female.freq[1]), labels=c("","ancestral"),
+col=c("steelblue2","black"))
+
+pie(c(masoko.female.freq[2],1-masoko.female.freq[2]), labels=c("","ancestral"),
+col=c("gold2","black"))
+
+pie(c(masoko.female.freq[3],1-masoko.female.freq[3]), labels=c("","ancestral"),
+col=c("maroon","black"))
+
+# Itupi River male allele frequencies
+
+itupi.male <- astcal[which(astcal$locgroup == "itupi" & astcal$sex == "M"),]
+
+itupi.male.counts <- c(sum(itupi.male$gsdf_nalt, na.rm=TRUE), 
+sum(itupi.male$chr7_18086980_ins_nalt, na.rm=TRUE), 
+sum(itupi.male$chr19_21572413_ins_nalt, na.rm=TRUE))
+names(itupi.male.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+itupi.male.freq = itupi.male.counts/c(2*(c(length(which(is.na(itupi.male$gsdf_nalt) != TRUE)), 
+length(which(is.na(itupi.male$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(itupi.male$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(itupi.male.freq[1],1-itupi.male.freq[1]), labels=c("gsdf-dup","ancestral"),
+col=c("steelblue2","black"))
+
+pie(c(itupi.male.freq[2],1-itupi.male.freq[2]), labels=c("","ancestral"),col=c("gold2","black"))
+
+pie(c(itupi.male.freq[3],1-itupi.male.freq[3]), labels=c("","ancestral"),col=c("maroon","black"))
+
+# Itupi River unknown sex allele frequencies
+
+itupi.unknown <- astcal[which(astcal$locgroup == "itupi" & is.na(astcal$sex)),]
+
+itupi.unknown.counts <- c(sum(itupi.unknown$gsdf_nalt, na.rm=TRUE), 
+sum(itupi.unknown$chr7_18086980_ins_nalt, na.rm=TRUE), 
+sum(itupi.unknown$chr19_21572413_ins_nalt, na.rm=TRUE))
+names(itupi.unknown.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+itupi.unknown.freq = itupi.unknown.counts/c(2*(c(length(which(is.na(itupi.unknown$gsdf_nalt) 
+!= TRUE)), length(which(is.na(itupi.unknown$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(itupi.unknown$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(itupi.unknown.freq[1],1-itupi.unknown.freq[1]), labels=c("gsdf-dup","ancestral"),
+col=c("steelblue2","black"))
+
+pie(c(itupi.unknown.freq[2],1-itupi.unknown.freq[2]), labels=c("","ancestral"),
+col=c("gold2","black"))
+
+pie(c(itupi.unknown.freq[3],1-itupi.unknown.freq[3]), labels=c("","ancestral"),
+col=c("maroon","black"))
+
+# Songwe River unknown sex allele frequencies
+
+songwe <- astcal[which(astcal$locgroup == "songwe"),]
+
+songwe.counts <- c(sum(songwe$gsdf_nalt, na.rm=TRUE), sum(songwe$chr7_18086980_ins_nalt, 
+na.rm=TRUE), sum(songwe$chr19_21572413_ins_nalt, na.rm=TRUE))
+names(songwe.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+songwe.freq = songwe.counts/c(2*(c(length(which(is.na(songwe$gsdf_nalt) != TRUE)), 
+length(which(is.na(songwe$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(songwe$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(songwe.freq[1],1-songwe.freq[1]), labels=c("","ancestral"),col=c("steelblue2","black"))
+
+pie(c(songwe.freq[2],1-songwe.freq[2]), labels=c("chr7-ins","ancestral"),
+col=c("gold2","black"))
+
+pie(c(songwe.freq[3],1-songwe.freq[3]), labels=c("","ancestral"),col=c("maroon","black"))
+
+# Mbaka river female allele frequencies
+
+mbaka.female <- astcal[which(astcal$locgroup == "mbaka" & astcal$sex == "F"),]
+
+mbaka.female.counts <- c(sum(mbaka.female$gsdf_nalt, na.rm=TRUE), 
+sum(mbaka.female$chr7_18086980_ins_nalt, na.rm=TRUE), 
+sum(mbaka.female$chr19_21572413_ins_nalt, na.rm=TRUE))
+names(mbaka.female.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+mbaka.female.freq = mbaka.female.counts/c(2*(c(length(which(is.na(mbaka.female$gsdf_nalt) != 
+TRUE)), length(which(is.na(mbaka.female$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(mbaka.female$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(mbaka.female.freq[1],1-mbaka.female.freq[1]), labels=c("","ancestral"),
+col=c("steelblue2","black"))
+
+pie(c(mbaka.female.freq[2],1-mbaka.female.freq[2]), labels=c("","ancestral"),
+col=c("gold2","black"))
+
+pie(c(mbaka.female.freq[3],1-mbaka.female.freq[3]), labels=c("","ancestral"),
+col=c("maroon","black"))
+
+# Mbaka River unknown sex allele frequencies
+
+mbaka.unknown <- astcal[which(astcal$locgroup == "mbaka" & is.na(astcal$sex)),]
+
+mbaka.unknown.counts <- c(sum(mbaka.unknown$gsdf_nalt, na.rm=TRUE), 
+sum(mbaka.unknown$chr7_18086980_ins_nalt, na.rm=TRUE), sum(mbaka.unknown$chr19_21572413_ins_nalt, 
+na.rm=TRUE))
+names(mbaka.unknown.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+mbaka.unknown.freq = mbaka.unknown.counts/c(2*(c(length(which(is.na(mbaka.unknown$gsdf_nalt) != 
+TRUE)), length(which(is.na(mbaka.unknown$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(mbaka.unknown$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(mbaka.unknown.freq[1],1-mbaka.unknown.freq[1]), labels=c("","ancestral"),
+col=c("steelblue2","black"))
+
+pie(c(mbaka.unknown.freq[2],1-mbaka.unknown.freq[2]), labels=c("","ancestral"),
+col=c("gold2","black"))
+
+pie(c(mbaka.unknown.freq[3],1-mbaka.unknown.freq[3]), labels=c("chr19-ins","ancestral"),
+col=c("maroon","black"))
+
+# Lake Kingiri male frequencies (all individuals are male)
+
+kingiri <- astcal[which(astcal$locgroup == "kingiri"),]
+
+kingiri.counts <- c(sum(kingiri$gsdf_nalt, na.rm=TRUE), sum(kingiri$chr7_18086980_ins_nalt, 
+na.rm=TRUE), sum(kingiri$chr19_21572413_ins_nalt, na.rm=TRUE))
+names(kingiri.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+kingiri.freq = kingiri.counts/c(2*(c(length(which(is.na(kingiri$gsdf_nalt) != TRUE)), 
+length(which(is.na(kingiri$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(kingiri$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(kingiri.freq[1],1-kingiri.freq[1]), labels=c("gsdf-dup","ancestral"),
+col=c("steelblue2","black"))
+
+pie(c(kingiri.freq[2],1-kingiri.freq[2]), labels=c("chr7-ins","ancestral"),col=c("gold2","black"))
+
+pie(c(kingiri.freq[3],1-kingiri.freq[3]), labels=c("chr19-ins","ancestral"),col=c("maroon","black"))
+
+# Lake Itamba male allele frequencies (all individuals are male)
+
+itamba <- astcal[which(astcal$locgroup == "itamba"),]
+
+itamba.counts <- c(sum(itamba$gsdf_nalt, na.rm=TRUE), sum(itamba$chr7_18086980_ins_nalt, 
+na.rm=TRUE), sum(itamba$chr19_21572413_ins_nalt, na.rm=TRUE))
+names(itamba.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+itamba.freq = itamba.counts/c(2*(c(length(which(is.na(itamba$gsdf_nalt) != TRUE)), 
+length(which(is.na(itamba$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(itamba$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(itamba.freq[1],1-itamba.freq[1]), labels=c("","ancestral"),col=c("steelblue2","black"))
+
+pie(c(itamba.freq[2],1-itamba.freq[2]), labels=c("chr7-ins","ancestral"),col=c("gold2","black"))
+
+pie(c(itamba.freq[3],1-itamba.freq[3]), labels=c("","ancestral"),col=c("maroon","black"))
+
+# Lake Malawi male allele frequencies
+
+malawi.male <- astcal[which(astcal$locgroup == "malawi" & astcal$sex == "M"),]
+
+malawi.male.counts <- c(sum(malawi.male$gsdf_nalt, na.rm=TRUE), 
+sum(malawi.male$chr7_18086980_ins_nalt, na.rm=TRUE), sum(malawi.male$chr19_21572413_ins_nalt, 
+na.rm=TRUE))
+names(malawi.male.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+malawi.male.freq = malawi.male.counts/c(2*(c(length(which(is.na(malawi.male$gsdf_nalt) != 
+TRUE)), length(which(is.na(malawi.male$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(malawi.male$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(malawi.male.freq[1],1-malawi.male.freq[1]), labels=c("","ancestral"),
+col=c("steelblue2","black"))
+
+pie(c(malawi.male.freq[2],1-malawi.male.freq[2]), labels=c("","ancestral"),col=c("gold2","black"))
+
+pie(c(malawi.male.freq[3],1-malawi.male.freq[3]), labels=c("chr19-ins","ancestral"),
+col=c("maroon","black"))
+
+# Lake Malawi female allele frequencies
+
+malawi.female <- astcal[which(astcal$locgroup == "malawi" & astcal$sex == "F"),]
+
+malawi.female.counts <- c(sum(malawi.female$gsdf_nalt, na.rm=TRUE), 
+sum(malawi.female$chr7_18086980_ins_nalt, na.rm=TRUE), sum(malawi.female$chr19_21572413_ins_nalt, 
+na.rm=TRUE))
+names(malawi.female.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+malawi.female.freq = malawi.female.counts/c(2*(c(length(which(is.na(malawi.female$gsdf_nalt) != 
+TRUE)), length(which(is.na(malawi.female$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(malawi.female$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(malawi.female.freq[1],1-malawi.female.freq[1]), labels=c("","ancestral"),
+col=c("steelblue2","black"))
+
+pie(c(malawi.female.freq[2],1-malawi.female.freq[2]), labels=c("","ancestral"),
+col=c("gold2","black"))
+
+pie(c(malawi.female.freq[3],1-malawi.female.freq[3]), labels=c("chr19-ins","ancestral"),
+col=c("maroon","black"))
+
+# Lake Malawi unknown sex allele frequencies
+
+malawi.unknown <- astcal[which(astcal$locgroup == "malawi" & is.na(astcal$sex) == TRUE),]
+
+malawi.unknown.counts <- c(sum(malawi.unknown$gsdf_nalt, na.rm=TRUE), 
+sum(malawi.unknown$chr7_18086980_ins_nalt, na.rm=TRUE), 
+sum(malawi.unknown$chr19_21572413_ins_nalt, na.rm=TRUE))
+names(malawi.unknown.counts) <- c("gsdf_dup","chr7_ins","chr19_ins")
+
+malawi.unknown.freq = malawi.unknown.counts/c(2*(c(length(which(is.na(malawi.unknown$gsdf_nalt) != 
+TRUE)), length(which(is.na(malawi.unknown$chr7_18086980_ins_nalt) != TRUE)), 
+length(which(is.na(malawi.unknown$chr19_21572413_ins_nalt) != TRUE)))))
+
+pie(c(malawi.unknown.freq[1],1-malawi.unknown.freq[1]), labels=c("","ancestral"),
+col=c("steelblue2","black"))
+
+pie(c(malawi.unknown.freq[2],1-malawi.unknown.freq[2]), labels=c("","ancestral"),
+col=c("gold2","black"))
+
+pie(c(malawi.unknown.freq[3],1-malawi.unknown.freq[3]), labels=c("chr19-ins","ancestral"),
+col=c("maroon","black"))
+
+### End code that uses data in Malawi_cichlids_sex_genotypes.txt ###
+
+############################################################################
+### Start R code that uses data in the files generated by sampleLDVar.pl ###
+### 1) chr7ins_genome_ld_sample.ldvar                                    ###
+### 2) chr19ins_genome_ld_sample.ldvar                                   ###
+###                                                                      ###
+### Include code for histograms of Figure S2                             ###
+############################################################################
+
+## read in data
+
+chr7var.1 <- read.table('chr7ins_genome_ld_sample.ldvar',head=TRUE)
+chr19var.1 <- read.table('chr19ins_genome_ld_sample.ldvar',head=TRUE)
+
+## find quantile of focal SNPs
+
+chr7var.cdf1 <- ecdf(chr7var.1$STDV_DIST[-1])
+chr7.quant = chr7var.cdf1(chr7var.1$STDV_DIST[1])
+
+chr19var.cdf1 <- ecdf(chr19var.1$STDV_DIST[-1])
+chr19.quant = chr19var.cdf1(chr19var.1$STDV_DIST[1])
+
+## plot position of focal SNP on the distribution of standard deviation
+
+#png(file='chr7_gwas_LD_distance_variance_1mb_hist.png')
+x11()
+par(mar=c(6,6,4,5))
+hist(chr7var.1$STDV_DIST[-1],breaks=40, xlab="", ylab="Number tested SNPs", main="", col="grey60", 
+cex.axis=1.9, cex.lab=2)
+r2expression = expression(paste(italic('s'), "(bp distance | ",r^2," > 0.5)"))
+mtext(r2expression, 1, cex=1.9, padj=1.8)
+abline(v=chr7var.1$STDV_DIST[1], col="red", lwd=2)
+text(x=4.75*10^5,y=600,paste("chr7:17718711\n", "  percentile =",round(chr7.quant,digits=2)),cex=1.9)
+#dev.off()
+
+#png(file='chr19_gwas_LD_distance_variance_1mb_hist.png')
+x11()
+par(mar=c(6,6,4,5))
+hist(chr19var.1$STDV_DIST[-1],breaks=20, xlab="", ylab="Number tested SNPs", main="", col="grey60",
+cex.axis=1.9, cex.lab=2)
+r2expression = expression(paste(italic('s'), "(bp distance | ",r^2," > 0.5)"))
+mtext(r2expression, 1, cex=1.9, padj=1.8)
+abline(v=chr19var.1$STDV_DIST[1], col="red", lwd=2)
+text(x=2.7*10^5,y=1500,paste("chr19:21581905\n","percentile =",round(chr19.quant,digits=2)),
+cex=1.9)
+#dev.off()
+
+### End R code that uses data in the files chr[7|19]ins_genome_ld_sample.ldvar ###
+
+#######################################################################################
+### Commands for generating neighbor-joining tree of Maylandia zebra, M. callainos, ###
+### M. emmiltos, and M. fainzilberi rooted using Rhamphochromis longiceps.          ###
+#######################################################################################
+
+# extract main genome-wide distance matrix from ngsDist output (the other matrices are 
+# bootstrap replicates)
+head -n 122 gsdf_subset_em.dist > gsdf_subset_genome_distmatrix.txt
+
+# calculate BIONJ tree
+fastme -i gsdf_subset_genome_distmatrix.txt -m I -s -o gsdf_subset_genome_bionj_tree.nwk
+
+# calculate BIONJ main tree and bootstrap trees
+fastme -i gsdf_subset_em.dist -m I -s -D 101 -T 12 -o gsdf_subset_bionj_tree_main_and_bootstrap.nwk
+head -n 1 gsdf_subset_bionj_tree_main_and_bootstrap.nwk > gsdf_subset_genome_bionj_tree_main.nwk
+tail -n +2 gsdf_subset_bionj_tree_main_and_bootstrap.nwk | awk 'NF' \
+> gsdf_subset_genome_bionj_tree_boot.nwk
+
+# calculate bootstrap support
+raxml-ng --support --tree gsdf_subset_genome_bionj_tree_main.nwk \
+--bs-trees gsdf_subset_genome_bionj_tree_boot.nwk --prefix gsdf_subset_genome_bionj_tree
+
+
+######################################################################################
+### Start R code that uses data in gsdf_subset_genome_bionj_tree_raxml_support.nwk ###
+### This is the code for drawing the species tree from Figure 4b                   ###
+######################################################################################
+
+## load libraries
+library(phytools)
+
+## read in tree data
+gsdf.tree <- read.tree('gsdf_subset_genome_bionj_tree_raxml_support.nwk')
+
+## draw tree
+#svg(file="gsdf_subset_genome_bionj_tree_support.svg",height=15,width=10)
+plot(root(gsdf.tree, outgroup="RhaLon4"),no.margin=TRUE,cex=0.8, align.tip.label=TRUE, 
+show.node.label=TRUE)
+#dev.off()
+
+### End R code that uses data in gsdf_subset_genome_bionj_tree_raxml_support.nwk ###
