@@ -53,7 +53,7 @@ from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
     be the casual Y variant.
 23) chr7_18086980_ins_read_counts: <Number reference reads>,<Number insertion reads> from chr7-ins
     locus.
-24) multi_locus_geno: String indicating the genotypes at gsdf and the most signfiicant GWAS SNPs
+24) multi_locus_geno: String indicating the genotypes at gsdf and the most significant GWAS SNPs
      <gsdf copies><number chr19:21581905 alternate alleles><number chr7:17718711 alternate alleles>
 25) multi_locus_geno_causal: String indicating the genotypes at the three causal sex determining
     loci <number gsdf copies><number chr19-ins alleles><number chr7-ins alleles>
@@ -63,6 +63,9 @@ from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
     mapped from RNAseq performed on liver, eye, anal fin, and gill tissues.
 34..37) e2f2_cpm_liver|eye|analfin|gill: Expression level of e2f2 in counts per million reads  
     mapped from RNAseq performed on liver, eye, anal fin, and gill tissues.
+
+Missing values are coded as 'NA'. Missing genotypes at a particular locus in the multi_locus_geno
+and multi_locus_geno_causal strings are coded as 'N'.
 
 ####################################################################################################
 ### Description of column names in Malawi_cichlids_sex_genotypes.txt                             ###
@@ -86,6 +89,9 @@ from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
     "<number reference alleles>/<number insertion alleles>".
 13) chr7-ins_AC: <Number reference reads>,<Number insertion reads> from chr7-ins locus.
 
+Missing values for the location, sublocation, and sex are coded as 'NA'. Missing genotypes for
+chr19-ins_GT and chr7-ins_GT are coded as './.'.
+
 ###############################################################################################
 ### Description of column names in gonad_gsdf_rnaseq.txt file                               ###
 ### RNAseq data from the gonads of two male and two female Astatotilapia calliptera sampled ###
@@ -108,7 +114,7 @@ from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
 ### Results for tests of genome-wide associations between SNPs and sex among Masoko      ###
 ### Astatotilapia calliptera. The first GWAS (1) was run using 596 males and 51 females. ###
 ### The second GWAS (2) was run on 90 males that did not carry gsdf-dup and 51 females,  ###
-### whilt the third GWAS (3) was run on 28 males that did not possess gsdf-dup nor the   ###
+### while the third GWAS (3) was run on 28 males that did not possess gsdf-dup nor the   ###
 ### chr19:21581905 alternate allele. The association tests were run using GEMMA 0.98.1   ###
 ### on SNPs with a minimum minor allele frequency of 5%.                                 ###
 ############################################################################################
@@ -131,7 +137,7 @@ from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
 
 1) Bin: Starting position of 100 bp bin on chromosome 7.
 2) XX_norm_mean: Relative sequence depth of females (entirely lack gsdf-dup).
-3) XY_norm_mean: Relative sequence depth of males heteroyzgous for gsdf-dup.
+3) XY_norm_mean: Relative sequence depth of males heterozygous for gsdf-dup.
 
 ################################################################################################
 ### Description of columns in chr7_18098212.ld file                                          ###
@@ -154,7 +160,7 @@ from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
 GTF format annotations file for chr7 in the fAstCal1.2 reference.
 
 ####################################################################################################
-### Description of colums in chr[7|19]ins_genome_ld_sample.ldvar files                           ###
+### Description of columns in chr[7|19]ins_genome_ld_sample.ldvar files                          ###
 ### Statistics describing patterns of linkage disequilibrium for Masoko Astatotilapia calliptera ###
 ### in 2 mb windows around SNPs across the genome with similar allele frequency to               ###
 ### chr19:21581905 and chr7:17718711 (the most strongly sex associated SNPs in the GWAS tagging  ###
