@@ -64,6 +64,9 @@ from Dryad along with VCFs for Masoko Astatotilapia calliptera: XXX
     mapped from RNAseq performed on liver, eye, anal fin, and gill tissues.
 34..37) e2f2_cpm_liver|eye|analfin|gill: Expression level of e2f2 in counts per million reads  
     mapped from RNAseq performed on liver, eye, anal fin, and gill tissues.
+38) wgs_accession: European Nucleotide Archive (ENA) sample accession for whole genome sequence data.
+39..42) liver|gill|eye|analfin_rna_accession: ENA sample accessions for RNA sequence data from 
+    liver, gill, eye, and anal fin tissues.
 
 Missing values are coded as 'NA'. Missing genotypes at a particular locus in the multi_locus_geno
 and multi_locus_geno_causal strings are coded as 'N'.
