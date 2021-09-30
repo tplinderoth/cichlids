@@ -185,6 +185,78 @@ Newick format file for the genome-wide neighbor-joining tree consisting of Mayla
 M. callainos, M. emmiltos, M. fainzilberi, and the outgroup Rhamphochromis longiceps. The file
 includes node support from 100 bootstrap replicates.
 
+###################################################################################################
+### Commands used to calculate gene expression levels in CPM for liver, eye, gill, and anal fin ### 
+### tissues.                                                                                    ###
+###################################################################################################
+
+## FastQ quality control
+trim_galore --fastqc -q 20 --paired --gzip -o $fastqDir --suppress_warn --basename $sample \
+$rawFastqFile1 $rawFastqFile2
+
+## Map RNAseq reads using STAR 2.7.3a
+
+# Generate index for each read length: the first for PE100 and then another for PE150.
+
+STAR --runThreadN 4 --runMode genomeGenerate --genomeDir STAR_fAstCal1.2_100bp-readlength/ \
+--genomeFastaFiles ~/rds/rds-rd109-durbin-group/ref/fish/Astatotilapia_calliptera/fAstCal1.2/GCA_900246225.3_fAstCal1.2_genomic_chromnames_mt.fa \
+--sjdbGTFfile fAstCal1.2.99.chr.gtf --sjdbOverhang 99 --genomeSAindexNbases 13
+
+STAR --runThreadN 4 --runMode genomeGenerate --genomeDir STAR_fAstCal1.2_150bp-readlength/ \
+--genomeFastaFiles ~/rds/rds-rd109-durbin-group/ref/fish/Astatotilapia_calliptera/fAstCal1.2/GCA_900246225.3_fAstCal1.2_genomic_chromnames_mt.fa \
+--sjdbGTFfile fAstCal1.2.99.chr.gtf --sjdbOverhang 149 --genomeSAindexNbases 13
+
+# map reads
+
+# 1st pass
+
+STAR --outFileNamePrefix $outFileNamePrefix --genomeDir $index --readFilesCommand zcat \
+--readFilesIn $fastqFile1 $fastqFile2 --runThreadN 4 --outSAMtype BAM Unsorted \
+--outSJfilterReads Unique --outSJfilterOverhangMin 16 8 12 12
+
+# 2nd pass
+
+STAR --outFileNamePrefix $outFileNamePrefix --genomeDir $index --readFilesCommand zcat \
+--readFilesIn $fastqFile1 $fastqFile2 --runThreadN 4 --outSAMtype BAM SortedByCoordinate \
+--outFilterMismatchNmax 999 --outSAMattributes All --outFilterMultimapNmax 10 \
+--outSAMstrandField intronMotif --outSAMunmapped Within
+
+## Count reads using featureCounts
+
+gtfFile file version = "fAstCal1.2.99.chr.gtf.gz"
+featureCounts -T 4 -p -B -a $gtfFile -o $countFile $bamFile
+
+# All counts per tissue were then merged into a single file with genes along the rows and raw counts
+# per individual along the columns.
+
+## Calculate CPM expression levels using edgeR. R code follows.
+
+library(edgeR)
+
+# specify input file and tissues names
+
+keyFile <- "countSeqKey.txt"
+
+countFiles <- c("analfin_count_matrix.txt.gz", "eye_count_matrix.txt.gz",
+"gills_count_matrix.txt.gz", "liver_count_matrix.txt.gz")
+
+tissues <- c("analfin", "eye", "gills", "liver")
+
+# read key file
+
+key <- read.delim(keyFile, sep="\t")
+
+# read counts, subset by tissue and sort by individual (not all tissues for each individual), 
+# then scale to CPM.
+
+for(i in 1:length(tissues)) {
+  cnts <- read.delim(countFiles[i], sep="\t", row.names=1, stringsAsFactors=F)
+  cnts <- cnts[,key$simple_id[key$tissue == tissues[i]]]
+  cnts <- cpm(cnts)
+}
+
+### End commands for calculating liver, eye, gill, anal fin gene expression levels ###
+
 #################################################################
 ### Start R code that uses data in masoko_master_data.txt     ###
 ### Includes code for Figures 2b, 3, S3, S4, S6, S5, S7       ###
@@ -992,6 +1064,99 @@ xlim=c(0,4), cex.names=0.6)
 #dev.off()
 
 ### End R code that uses data in gonad_gsdf_rnaseq.txt ###
+
+########################################
+### Start commands used for sex GWAS ###
+########################################
+
+## SNP quality control
+
+# SNPs were masked for quality using relaxed Hardy-Weinberg and depth filters relative to the calls
+# used for popgen. The following quality criteria were applied to variants called from the 336
+# medium-coverage individuals.
+
+for i in {1..20} 22 23; do
+vcfCleaner gatk -vcf aprilgenotyped.chr$i.vcf -out aprilfiltered.chr$i -biallelic 1 -allsites 1 \
+-allsites_vcf 0 -maxcov 6000 -mincov 2000 -minind_cov 4 -minind 302 -mingeno 302 -rms_mapq 40 \
+-mapqRankSum 6 -posbias 6 -strandbias 60 -baseqbias 6 -qual 30 -varq_depth 3 -hetexcess 200 \
+-varonly 1 -maf 0 -verbose 0
+done
+
+# Mask unfiltered 648-individual callset to include only sites in the QC-passed position file
+# outputted by vcfCleaner run above.
+
+bcftools view -R aprilfiltered_allchr.pos -o all_CalMas_variants_genome_gwas_clean.vcf.gz -O z \
+all_CalMas_variants_genome.vcf.gz
+
+## Calculate mean posterior genotypes from VCF likelihoods and output in BIMBAM format
+
+vcf2bimbam all_CalMas_variants_genome_gwas_clean.vcf hwe > CalMas.geno.pl.txt 
+
+## Generate SNP annotation file for GEMMA
+
+bcftools query -f "%POS\t%CHROM\n" all_CalMas_variants_genome_gwas_clean.vcf | sed 's/chr//' \
+> SNP_annotations.txt
+cut -f 1 -d',' CalMas.geno.pl.txt > SNP_ID.txt
+paste --delimiters='\t' SNP_ID.txt SNP_annotations.txt > SNP_annotation_file.txt
+
+## Calculate GEMMA relatedness matrix
+
+gemma -g CalMas.geno.pl.txt -p sex_phenotypes.txt -gk 2 -o CalMas_gemma_relate_standard
+
+## Run sex GWAS on all 596 males and 51 females
+
+gemma -g CalMas.geno.pl.txt -p sex_phenotypes.txt -n 1 -a SNP_annotation_file.txt \
+-k CalMas_gemma_relate_standard.sXX.txt -lmm 4 -maf 0.05 -o lmm_sex_masked_all_corrected
+
+## Run second sex GWAS on subset of individuals lacking gsdf-dup (1x_ind_list.txt), i.e. those 
+## with < 1.25x coverage at the duplicated gsdf region.
+
+# Subset non-gsdf-dup individuals from VCF and mask sites for quality
+bcftools view -S 1x_ind_list.txt -R aprilfiltered_allchr.pos \
+-o all_CalMas_variants_genome_clean_1x.vcf.gz -O z all_CalMas_variants_genome.vcf.gz
+
+# Generate BIMBAM format file of mean posterior genotypes and SNP annotation file as above
+# for the first GWAS.
+
+vcf2bimbam all_CalMas_variants_genome_gwas_clean_1x.vcf hwe > CalMas_1x.geno.pl.txt
+
+bcftools query -f "%POS\t%CHROM\n" all_CalMas_variants_genome_gwas_clean_1x.vcf | sed 's/chr//' \  
+> SNP_annotations_1x.txt
+cut -f 1 -d',' CalMas_1x.geno.pl.txt > SNP_ID_1x.txt
+paste --delimiters='\t' SNP_ID_1x.txt SNP_annotations_1x.txt > SNP_annotation_file_1x.txt
+
+# Calculate new GEMMA relatedness matrix for non-gsdf-dup individuals
+
+gemma -g CalMas_1x.geno.pl.txt -p sex_phenotypes_1x.txt -gk 2 -o CalMas_sex_1x_relate
+
+# run second GWAS
+
+gemma -g CalMas_1x.geno.pl.txt -p sex_phenotypes_1x.txt -n 1 -a SNP_annotation_file_1x.txt \
+-k CalMas_sex_1x_relate.sXX.txt -lmm 4 -maf 0.05 -o lmm_sex_masked_1x_only
+
+# Run third sex GWAS in the same manner as for the previous two, except with both gsdf-dup and 
+# individuals carrying the alternate allele at chr19:21581905 excluded.
+
+gemma -g CalMas_1x.geno.pl.txt -p sex_phenotypes_no_7_19.txt -n 1 -a SNP_annotation_file_1x.txt \
+-k CalMas_sex_1x_relate.sXX.txt -lmm 4 -maf 0.05 -o lmm_sex_masked_no_7_19
+
+## For a more consistent approach one could directly use the 648-individual VCF/genotypes for both
+## the second and third GWAS but set the phenotype for excluded individuals in the phenotype file to
+## "NA" in order to exclude them. We experimented using this approach and the results were very
+## similar to the above method which are the results presented in the paper.
+
+# Results from the following GEMMA runs were not used in the paper, but were performed to test the
+# robustness of the association results to different ways of excluding individuals.
+
+# GWAS 2 (no gsdf-dup individuals)
+gemma -g CalMas.geno.pl.txt -p sex_phenotypes_2.txt -n 1 -a SNP_annotation_file.txt \
+-k CalMas_gemma_relate_standard.sXX.txt -lmm 4 -maf 0.05 -o lmm_sex_masked_2
+
+# GWAS 3 (no gsdf-dup or alternate allele-bearing chr19:21581905 individuals)
+gemma -g CalMas.geno.pl.txt -p sex_phenotypes_3.txt -n 1 -a SNP_annotation_file.txt \
+-k CalMas_gemma_relate_standard.sXX.txt -lmm 4 -maf 0.05 -o lmm_sex_masked_3
+
+### End commands used for sex GWAS ###
 
 ######################################################################
 ### Start R code that uses data in masoko_sex_gwas_[123].txt files ###
@@ -1867,6 +2032,7 @@ tail -n +2 gsdf_subset_bionj_tree_main_and_bootstrap.nwk | awk 'NF' \
 raxml-ng --support --tree gsdf_subset_genome_bionj_tree_main.nwk \
 --bs-trees gsdf_subset_genome_bionj_tree_boot.nwk --prefix gsdf_subset_genome_bionj_tree
 
+### End commands used for generating Mbuna neighbor-joining tree ###
 
 ######################################################################################
 ### Start R code that uses data in gsdf_subset_genome_bionj_tree_raxml_support.nwk ###
