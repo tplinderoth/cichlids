@@ -1661,7 +1661,7 @@ astcal$locgroup = NA
 astcal$locgroup[astcal$location == "Lake_Masoko"] = "masoko"
 astcal$locgroup[astcal$location == "Lake_Kingiri"] = "kingiri"
 astcal$locgroup[astcal$location == "Mbaka_river" | astcal$location == "Kyela"] = "mbaka" # 42A Kyela sample was from the lower Mbaka River 
-astcal$locgroup[astcal$location == "Malombe"] = "malombe"
+astcal$locgroup[astcal$location == "Lake_Malombe"] = "malombe"
 astcal$locgroup[astcal$location == "Rovuma_river" | astcal$location == "Kitai_Dam"] = "rovuma" # Kitai Dam is on the Rovuma River
 astcal$locgroup[astcal$location == "Lake_Chilwa"] = "chilwa"
 astcal$locgroup[astcal$location == "North_Rukuru_river"] = "north_rukuru"
