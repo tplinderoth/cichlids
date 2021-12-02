@@ -1,0 +1,37 @@
+# NLINES: Number of lines in VCF discounting the header
+# NAA: Number of VCF lines with an ancestral allele assigned
+# PASS: Number of VCF lines that pass all quality controls
+
+chrM:NLINES=16797;NAA=16380(97.5%);PASS=14532(86.5%)
+
+===== FILTER CONFIGURATION SUMMARY =====
+= MITOCHONDRIAL GENOME =
+ExcessBQ0;LowBQ;LowCov;LowDP: 1 (0.0%)
+ExcessBQ0;ExcessCov;LowBQ: 2 (0.1%)
+LowCov: 271 (12.0%)
+ExcessMQ0;LowCov;LowDP: 176 (7.8%)
+LowDP: 109 (4.8%)
+ExcessBQ0;ExcessMQ0;LowCov;LowDP: 9 (0.4%)
+ExcessBQ0;ExcessMQ0;LowCov: 1 (0.0%)
+ExcessBQ0;ExcessCov: 9 (0.4%)
+ExcessMQ0;LowCov: 44 (1.9%)
+LowCov;LowDP: 295 (13.0%)
+ExcessBQ0: 107 (4.7%)
+ExcessBQ0;LowCov;LowDP: 46 (2.0%)
+ExcessBQ0;LowDP: 105 (4.6%)
+ExcessCov;ExcessMQ0: 94 (4.2%)
+ExcessCov;LowBQ: 4 (0.2%)
+ExcessMQ0;LowDP: 29 (1.3%)
+ExcessMQ0: 222 (9.8%)
+ExcessCov: 731 (32.3%)
+ExcessBQ0;LowCov: 10 (0.4%)
+
+===== FLAG COUNTS (among filter configurations) =====
+
+= MITOCHONDRIAL GENOME =
+LowBQ: 7 (0.2%)
+LowCov: 853 (25.6%)
+ExcessCov: 840 (25.2%)
+ExcessMQ0: 575 (17.2%)
+ExcessBQ0: 290 (8.7%)
+LowDP: 770 (23.1%)

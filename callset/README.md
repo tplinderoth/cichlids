@@ -8,27 +8,35 @@ Cichlid genetic variants
 ___________________________
 
 All-sites VCF location:<br/>
-~/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/allsites_vcf3/annotated
+/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/allsites_vcf3/annotated
+
+All-variants VCF location:<br/>
+/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/all_variants3
 
 Biallelic VCF location:<br/>
-~/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/biallelic3
+/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/biallelic3
 
 Phased SNP VCF (all biallelic SNPs):<br/>
-~/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/biallelic3/phase/all_biallelic
+/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/biallelic3/phase/all_biallelic
 
 Phased INFO/PASS SNP VCF location:<br/>
-~/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/biallelic3/phase/pass_only
+/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/biallelic3/phase/pass_only
 
 ### Malawi cichlids v1.3 summary
 
-* VCF_sites: Number of site entries (lines discounting the header) in All-sites VCF. Note that the same position may occur on multiple lines.
+* all-sites VCF: Number of site entries (lines discounting the header) in all-sites VCF. Note that the same position may occur on multiple, adjacent lines.
 * variants: Number of SNPs + indels
 * SNPs: Number of SNPs
 * insertions: Number of insertions
 * deletions: Number of deletions
-* SNP_sites: Number of lines in VCF containing SNPs
-* biallelic_SNP_sites: Number of lines in VCF containing biallelic SNPs
+* SNPs: Number of single nucleotide changes
+* SNP_sites: Number of sites with at least one single nucleotide change
+* biallelic_SNPs: Number of biallelic SNP sites
+* deletion_SNPs: Number of SNPs within deletions
+* bi_deletion_SNPs: Number of biallelic SNPs within deletions
+* biallelic_VCF: Number of sites in biallelic VCF (biallelic SNPs outside of deletions and with INFO/AF in interval (0,1))
 * ancestral_annotations: Number of lines with an inferred ancestral allele
+* QC_pass: Number of sites passing quality controls (see VCF headers, [annotation_summary](./annotation_summary.txt), and [chrM_annotation_summary](./chrM_annotation_summary.txt) for a detailed breakdown)
 
 | chromosome | all-sites_VCF | variants  | insertions | deletions | SNPs      | SNP_sites | biallelic_SNPs | deletion_SNPs | bi_deletion_SNPs | biallelic_VCF | ancestral_annotations | QC_pass           |
 |:-----------|:--------------|:----------|:-----------|:----------|:----------|:----------|:---------------|:--------------|:-----------------|:--------------|:----------------------|:------------------|
