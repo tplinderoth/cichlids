@@ -1,7 +1,6 @@
-Cichlid genetic variants
+Malawi Cichlid Callset v1.3
 ========================
 
-## Malawi cichlid callset v1.3
 * **2198 individuals** 
 * **47 genera** 
 * **255 species (unique taxa)** 
