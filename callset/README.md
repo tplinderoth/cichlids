@@ -66,6 +66,13 @@ all_main_chr | 876670382     | 201347802 | 16451413   | 22301042  | 162595347 | 
 U_scaffolds  | 29421111      | 5649756   | 381473     | 519431    | 4748852   | 4347073   | 3961264        | 63695         | 56870            | 3901640       | 10757890 (36.6%)      | 2960951 (10.1%)   |
 chrM         | 16797         | 5766      122          | 89        | 5555      | 4856      | 4219           | 73            | 49               | 4169          | 16380 (97.5%)         | 14532 (86.5%)     |
 
+### Accessability masks
+
+Bed format files containing accessible regions of the genome based on quality in the 255-individual QC subset can be found here: 
+/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/mask/bed
+
+Note that these *_.pass bed files do not consider HighDP/LowDP (coverage cutoffs based on all 2198 callset individuals).
+
 ### Updates
 
 **22.11.2021.**

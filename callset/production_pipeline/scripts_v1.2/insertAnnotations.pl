@@ -6,10 +6,9 @@ use warnings;
 use strict;
 use Getopt::Long;
 use IO::Zlib;
-use List::MoreUtils qw(uniq);
 #use warnings FATAL => 'all';
 
-my $version = '1.0.0';
+my $version = '0.2.0';
 my $alfile = undef;
 my $alfields = undef;
 my $anctype = 'parsimony';
@@ -17,9 +16,8 @@ my $dpbounds = undef;
 my $vcf = undef;
 my $rmfilter = undef;
 my $fstart = 4;
-my $bed = undef;
+my $bedgraph = undef;
 my $bedlist = undef;
-my $overwrite;
 
 die(qq/
 insertAnnotations.pl version $version
@@ -33,9 +31,8 @@ cat <vcf file> | insertAnnotations.pl [options]
 --anctype   Infer ancestral allele using 'parsimony' or as the 'major' allele among outgroups [$anctype]
 --dpbounds  LowDP and HighDP bounds to annotate FILTER field, format '<INT lower bound>,<INT upper bound>'
 --rmfilter  ','-delimited list of FILTER annotations to remove
---bed       Bed format file with FILTER annotations to add in the 4th column
---bedlist   ','-delimited list of FILTER annotations to ignore from bed
---overwrite Replace all existing filters, otherwise new filters are appended
+--bedgraph  Bed format file with annotations to add to the FILTER field
+--bedlist   ','-delimited list of FILTER annotations to use from bedgraph (ignore all others)
 
 Notes:
 *Assumes the same contig order in VCF and allele files.
@@ -47,43 +44,44 @@ Notes:
 
 *Parsimony currently only implemented for 3 outgroup case.
 
-*Particular FILTER annotations will be updated if the function that applies them (--dpbounds, --bed)
+*Particular FILTER annotations will be updated if the function that applies them (--dpbounds, --bedgraph)
  is called.
 
-*Bed must be sorted in same order as VCF.
+*Bedgraph must be sorted in same order as VCF.
 \n/) if (-t STDIN && !@ARGV);
 
 GetOptions('alfile=s' => \$alfile, 'alfields=s' => \$alfields, 'dpbounds=s' => \$dpbounds, 'rmfilter=s' => \$rmfilter, 'anctype=s' => \$anctype,
-'bed=s' => \$bed, 'bedlist=s' => \$bedlist, 'overwrite' => \$overwrite);
+'bedgraph=s' => \$bedgraph, 'bedlist=s' => \$bedlist);
 
 # this is for printing the command to the VCF header
 my %userargs = ('--alfile' => $alfile, '--alfields' => $alfields, '--dpbounds' => $dpbounds, '--rmfilter' => $rmfilter, '--anctype' => $anctype,
-'--bed' => $bed, '--bedlist' => $bedlist, '--overwrite' => $overwrite);
+'--bedgraph' => $bedgraph, '--bedlist' => $bedlist);
 # disable printing commands if not applicable
 $userargs{"--anctype"} = undef if (!$alfile);
-$userargs{"--bedlist"} = undef if (!$bedlist);
 
 # read in VCF
 
 $vcf = pop @ARGV;
+
 my $vcffh;
 if ($vcf) {
-	open($vcffh, '<', $vcf) or die("Unable to open VCF $vcf: $!\n");
+	open($vcffh, '<', $vcf) or die("Couldn't open VCF file $vcf: $!\n");
 	sysread $vcffh, my $magic, 2;
 	close $vcffh;
 
-	if ($magic eq "\x1f\x8b") {
-		# gzipped file
-		$vcffh = new IO::Zlib;
-		$vcffh->open($vcf, "rb");
+	if ($magic eq "\x1f\x9d") {
+        	open($vcffh, '<', $vcf);
+	} elsif ($magic eq "\x1f\x8b") {
+        	$vcffh = new IO::Zlib;
+        	$vcffh->open($vcf, "rb");
 	} else {
-		open($vcffh, '<', $vcf);
+        	die("Unrecognized compression type for $vcf\n");
 	}
+
 } else {
 	die("No input VCF\n") if (-t STDIN);
 	$vcffh = \*STDIN;
 }
-
 
 # initalize ancestral allele inference
 
@@ -134,20 +132,15 @@ if ($dpbounds) {
 	$delfilter{LowDP} = 1;
 }
 
-my %bedfilter = (LowCov => 1, ExcessCov => 1, LowMQ => 1, ExcessMQ0 => 1, NoCov => 1, LowBQ => 1, ExcessBQ0 => 1);
-if ($bed) {
-	if ($bedlist) {
-		$bedlist .= "," if ($bedlist !~ /,$/);
-		$bedlist =~ s/,/\|/g;
-	}
-	open($bedfh, '<', $bed) or die("Unable to open bed file $bed: $!\n");
-	foreach (keys %bedfilter) {
-		if ($bedlist && $bedlist =~ /$_\|/) {
-			delete $bedfilter{$_};
-			next;
-		}
+my %bedfilter;
+if ($bedgraph) {
+	die("Must provide --bedlist if using a bedgraph file of filter annotations\n") if (!$bedlist);
+	open($bedfh, '<', $bedgraph) or die("Unable to open bedgraph file $bedgraph: $!\n");
+	foreach (split(/,/, $bedlist)) {
 		$delfilter{$_} = 1;
+		$bedfilter{$_} = 1;
 	}
+	$bedlist =~ s/,/\|/g;
 }
 
 if ($rmfilter) {
@@ -168,14 +161,12 @@ $command =~ s/\s$//;
 $command .= "\">\n";
 
 my $aa_string = "##INFO=<ID=AA,Number=1,Type=String,Description=\"Ancestral Allele\">\n";
-my $lowdp_string = "##FILTER=<ID=LowDP,Description=\"Site DP less than genome-wide median site DP -25%\">\n";
-my $highdp_string = "##FILTER=<ID=HighDP,Description=\"Site DP greater than genome-wide median site DP +25%\">\n";
-my $lowcov_string = "##FILTER=<ID=LowCov,Description=\"Total depth among QC subset individuals below 0.05 quantile\">\n";
-my $excesscov_string = "##FILTER=<ID=ExcessCov,Description=\"Total depth among QC subset individuals above 0.95 quantile\">\n";
+my $lowdp_string = "##FILTER=<ID=LowDP,Description=\"Site DP is less than median site DP -25%\">\n";
+my $highdp_string = "##FILTER=<ID=HighDP,Description=\"Site DP is greater than median site DP +25%\">\n";
+my $lowcov_string = "##FILTER=<ID=LowCov,Description=\"Total coverage among QC subset individuals below 0.05 quantile\">\n";
+my $excesscov_string = "##FILTER=<ID=ExcessCov,Description=\"Total coverage among QC subset individuals above 0.95 quantile\">\n";
 my $lowmq_string = "##FILTER=<ID=LowMQ,Description=\"Root mean square map quality below 35 for QC subset individuals\">\n";
-my $mqzero_string = "##FILTER=<ID=ExcessMQ0,Description=\"Fraction of reads with map quality zero among QC subset individuals exceeds 2x the genome-wide average\">\n";
-my $lowbq_string = "##FILTER=<ID=LowBQ,Description=\"Root mean square base quality below 20 for QC subset individuals\">\n";
-my $bqzero_string = "##FILTER=<ID=ExcessBQ0,Description=\"Fraction of reads with base quality zero among QC subset individuals exceeds 2x the genome-wide average\">\n";
+my $mqzero_string = "##FILTER=<ID=ExcessMQ0,Description=\"Fraction of reads with map quality zero among QC subset individuals greater than 0.2\">\n";
 my $nocov_string = "##FILTER=<ID=NoCov,Description=\"No mapped reads among QC subset individuals\">\n";
 
 my @headorder = ('fileformat', 'reference', 'contig', 'INFO', 'FILTER', 'FORMAT', 'ALT', 'other'); # header order
@@ -190,7 +181,7 @@ while (($hline = <$vcffh>) =~ /^##/) {
 	if ($hline =~ /^##([^=]+)/i) {
 		my $annotation = $1;
 
-		if (($rmfilter || $bed) && $hline =~ /^##FILTER=<ID=([^,]+)/) {
+		if (($rmfilter || $bedgraph) && $hline =~ /^##FILTER=<ID=([^,]+)/) {
 			next if exists $delfilter{$1}
 		}
 
@@ -222,8 +213,6 @@ push @{$header{FILTER}}, $lowcov_string if ($bedfilter{LowCov});
 push @{$header{FILTER}}, $excesscov_string if ($bedfilter{ExcessCov});
 push @{$header{FILTER}}, $lowmq_string if ($bedfilter{LowMQ});
 push @{$header{FILTER}}, $mqzero_string if ($bedfilter{ExcessMQ0});
-push @{$header{FILTER}}, $lowbq_string if ($bedfilter{LowBQ});
-push @{$header{FILTER}}, $bqzero_string if ($bedfilter{ExcessBQ0});
 
 push @{$header{other}}, $command;
 
@@ -239,12 +228,10 @@ print STDOUT $hline;
 
 my %filtercounts;
 map { $filtercounts{$1} = 0 if $_ =~ /ID=([^,]+)/ } @{$header{FILTER}};
-my %filterconfigs;
 
 my $vcfchr;
 my @bedtok = (0,0,0);
 my $site_count = 0;
-my $fail_counts = 0;
 my $aa_count = 0;
 my @tok;
 
@@ -255,20 +242,14 @@ while (<$vcffh>) {
 	$site_count++;
 
 	# update begraph region
-	if ($bed) {
-		$vcfchr = uc($1) if ($tok[0] =~ /(\d+|M)$/i);
-		if ($vcfchr eq 'M') {
-			while (!eof($bedfh) && $bedtok[0] ne $vcfchr) {
-				bedsplit(\@bedtok, $bedfh);
-			}
-		} else {
-			while (!eof($bedfh) && $bedtok[0] < $vcfchr) {
-				bedsplit(\@bedtok, $bedfh);
-			}
+	if ($bedgraph) {
+		$vcfchr = $1 if ($tok[0] =~ /(\d+)$/);
+		while (!eof($bedfh) && $bedtok[0] < $vcfchr) {
+			bedsplit(\@bedtok, $bedfh);
 		}
 		while (!eof($bedfh) && $bedtok[2] < $tok[1]) {
 			bedsplit(\@bedtok, $bedfh);
-			last if ($bedtok[0] ne $vcfchr);
+			last if ($bedtok[0] != $vcfchr);
 		}
 	}
 	
@@ -443,7 +424,7 @@ while (<$vcffh>) {
 	}
 
 	# apply filters
-	if ($dpbounds || $bed) {
+	if ($dpbounds || $bedgraph) {
 		my @filter_annotations;
 	
 		# coverage filters
@@ -460,9 +441,11 @@ while (<$vcffh>) {
 			}
 		}
 
-		# bed filters
-		if ($bed && $vcfchr eq $bedtok[0] && $tok[1] > $bedtok[1] && $tok[1] <= $bedtok[2]) {
-			map {push @filter_annotations, $_ if exists $bedfilter{$_}} split(';',$bedtok[3]); 
+		# bedgraph filters
+		if ($bedgraph && $vcfchr == $bedtok[0] && $tok[1] > $bedtok[1] && $tok[1] <= $bedtok[2]) {
+			for (my $i=3; $i <= $#bedtok; $i++) {
+				push @filter_annotations, $bedtok[$i] if ($bedtok[$i] ne "0" && exists $bedfilter{$bedtok[$i]});
+			}
 		}
 
 		# update FILTER field with new annotations
@@ -470,42 +453,26 @@ while (<$vcffh>) {
 			if ($tok[6] eq "." || $tok[6] eq "PASS") {
 				$tok[6] = join(';',@filter_annotations);
 			} else {
-				if ($overwrite) {
-					$tok[6] .= join(';',@filter_annotations);
-				} else {
-					push @filter_annotations, split(';', $tok[6]);
-					$tok[6] = join(';', uniq @filter_annotations);
-				}
+				$tok[6] .= ";" . join(';',@filter_annotations);
 			}
 		} else {
 			$tok[6] = "PASS" if ($tok[6] eq '.');
 		}
 	}
-	
-	if ($tok[6] ne '.' && uc($tok[6]) ne 'PASS') {
-		$fail_counts++;
-		map {$filtercounts{$_}++} split(';', $tok[6]);
-	}
-	if (exists $filterconfigs{$tok[6]}) {
-		$filterconfigs{$tok[6]}++;
-	} else {
-		$filterconfigs{$tok[6]} = 1;
-	}
+	map {$filtercounts{$_}++ unless $_ eq '.'} split(':', $tok[6]);
 
 	print STDOUT "@tok\n";
 }
 
 close $vcffh;
 close $alfh if ($alfile);
-close $bedfh if ($bed);
+close $bedfh if ($bedgraph);
 
 # print counts
-print STDERR "\n===== REPORT =====\n";
 print STDERR "Last contig processed: $tok[0]\n";
 print STDERR "Number sites in VCF: $site_count\n";
 
 if ($alfile) {
-	print STDERR "\n===== ANCESTRAL ALLELE REPORT =====\n";
 	print STDERR "Number of sites with ancestral alleles: $aa_count\n";
 	if ($aamethod == 1) {
 		print STDERR "Ingroup allele matching configurations\n";
@@ -513,26 +480,14 @@ if ($alfile) {
 	}
 }
 
-print STDERR "\n===== FILTER SUMMARY =====\n";
-print STDERR "Number of FAIL sites: $fail_counts\n";
-print STDERR "\n===== FILTER CONFIGURATION COUNTS =====\n";
-foreach (keys %filterconfigs) {
-	print STDERR "$_: $filterconfigs{$_}\n" unless ($_ eq 'PASS' || $_ eq '.');
-}
-
-print STDERR "\n===== FILTER FLAG COUNTS =====\n";
-foreach (@{$header{FILTER}}) {
-	if ($_ =~ /ID=([^,]+)/) {
-		print STDERR "$1: $filtercounts{$1}\n" unless ($1 eq 'PASS' || $1 eq '.');
-	}
-}
+map { print STDERR "Number $1: $filtercounts{$1}\n" if $_ =~ /ID=([^,]+)/ } @{$header{FILTER}};
 
 exit;
 
 sub bedsplit {
 	my ($tok, $fh) = @_;
 	@$tok = split(/\s+/, readline($$fh));
-	$$tok[0] = uc($1) if $$tok[0] =~ /(\d+|M)$/i;
+	$$tok[0] = $1 if $$tok[0] =~ /(\d+)$/;
 }
 
 sub makeLookup {
@@ -542,13 +497,13 @@ sub makeLookup {
 # Simochromis diagramma, Tropheini tribe (0)
 # Neolamprologus brichardi, Lamprologini tribe (1)
 # Oreochromis niloticus (2)
-# not able to assign (9)
+# not able to assign (-9)
 
 ### codes corresponding to elements of of the lookup table
 # [S. diagramma]->[N. brichardi]->[O. niloticus]
 # 0: mismatch to A. calliptera allele
 # 1: match A. calliptera allele
-# 2: missing data
+# 9: not able to assign
 
         my @anc;
 
