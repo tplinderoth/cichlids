@@ -9,6 +9,9 @@ ___________________________
 All-sites VCF location:<br/>
 /rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/allsites_vcf3/annotated
 
+All-sites, sites-only VCF (same as all-sites VCF but without genotype information):<br/>
+/rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/allsites_vcf3/annotated/sites_only
+
 All-variants VCF location:<br/>
 /rds/rds-durbin-group-8b3VcZwY7rY/projects/cichlid/malawi_callset/all_variants3
 
