@@ -1446,7 +1446,7 @@ plot_exon <- function(exon_row, b1, t1){
   rect(xleft = exon_row["start"], xright = exon_row["end"], ybottom=b1, ytop=t1, col = "red" , border = NA)
 }
 
-# Annotation subfucntion::Function to plot genes
+# Annotation subfunction::Function to plot genes
 plot_gene <- function(gene_id, gtf, gene.levels){
    # subset the gtf to only gene of interest
    gtf_mygene <- gtf[which(gtf$gene_id == gene_id),]
